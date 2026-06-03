@@ -1,0 +1,1176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MISUMI ↔ JLCMC 30-Series Translator</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --panel: #ffffff;
+    --ink: #1a1a1a;
+    --muted: #666;
+    --accent: #1d6fb8;
+    --accent-soft: #e8f1fa;
+    --warn-bg: #fff8e1;
+    --warn-border: #e0b020;
+    --err-bg: #fdecec;
+    --err-border: #c44;
+    --ok: #1f8a3a;
+    --line: #e3e3df;
+    --code-bg: #f1f1ec;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.5;
+  }
+  header {
+    padding: 24px 24px 8px;
+    max-width: 980px;
+    margin: 0 auto;
+  }
+  header h1 {
+    margin: 0 0 4px;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 16px 24px 64px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+  .row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .dir-toggle {
+    display: inline-flex;
+    background: var(--code-bg);
+    border-radius: 6px;
+    padding: 3px;
+    gap: 0;
+  }
+  .dir-toggle button {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+  .dir-toggle button.active {
+    background: var(--accent);
+    color: white;
+  }
+  input[type=text] {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 15px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: white;
+    color: var(--ink);
+    margin-top: 12px;
+  }
+  input[type=text]:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    border-color: var(--accent);
+  }
+  .examples {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .examples button {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: none;
+    padding: 3px 8px;
+    margin: 2px 4px 2px 0;
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .examples button:hover { background: #d4e6f5; }
+
+  .output {
+    margin-top: 16px;
+    padding: 14px 16px;
+    background: var(--code-bg);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 16px;
+    word-break: break-all;
+    min-height: 22px;
+  }
+  .output.success { background: #eef7ee; color: var(--ok); }
+  .output.error { background: var(--err-bg); color: var(--err-border); }
+
+  .copy-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .copy-btn:disabled { opacity: 0.4; cursor: default; }
+
+  .breakdown {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 680px) {
+    .breakdown { grid-template-columns: 1fr; }
+  }
+  .breakdown-side {
+    background: #fbfbf8;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+  .breakdown-side h3 {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  .breakdown-row {
+    padding: 6px 0;
+    border-top: 1px dotted var(--line);
+    display: grid;
+    grid-template-columns: minmax(80px, auto) 1fr;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 13px;
+  }
+  .breakdown-row:first-of-type { border-top: none; }
+  .breakdown-row .tok {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .breakdown-row .meaning {
+    color: var(--ink);
+  }
+  .breakdown-row .detail {
+    color: var(--muted);
+    font-size: 12px;
+    display: block;
+    margin-top: 2px;
+  }
+  .breakdown-row.unknown .tok { color: var(--err-border); }
+
+  .notes {
+    margin-top: 16px;
+  }
+  .note {
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--warn-bg);
+    border-left: 4px solid var(--warn-border);
+  }
+  .note.err {
+    background: var(--err-bg);
+    border-left-color: var(--err-border);
+  }
+  .note strong { font-family: var(--mono); }
+
+  details {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 20px;
+    margin: 12px 0;
+  }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 6px 0;
+  }
+  details[open] summary { margin-bottom: 8px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 8px 0 12px;
+  }
+  th, td {
+    text-align: left;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  th { font-weight: 600; background: var(--code-bg); }
+  code { font-family: var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 16px;
+  }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <h1>MISUMI ↔ JLCMC 30-Series Translator</h1>
+  <p>30 mm base aluminum extrusion. Convert MISUMI HFS6 part numbers ↔ JLCMC TXCK Euro Standard 30 part numbers.</p>
+</header>
+
+<main>
+  <div class="card">
+    <div class="row">
+      <div class="dir-toggle" role="tablist">
+        <button id="dirMtoJ" class="active" onclick="setDirection('MtoJ')">MISUMI → JLCMC</button>
+        <button id="dirJtoM" onclick="setDirection('JtoM')">JLCMC → MISUMI</button>
+      </div>
+    </div>
+
+    <input id="input" type="text" autocomplete="off" spellcheck="false"
+      placeholder="e.g. HFS6-3030-1000-LTP-RTP"
+      oninput="doTranslate()" />
+
+    <div class="examples" id="examples"></div>
+
+    <div class="output" id="output">—</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyOutput()" disabled>Copy</button>
+
+    <div class="breakdown" id="breakdown"></div>
+    <div class="notes" id="notes"></div>
+  </div>
+
+  <details>
+    <summary>Format reference</summary>
+    <h4>MISUMI</h4>
+    <p><code>{family}{6}-{section}-{lengthMM}[-{alt}…]</code> — e.g. <code>HFS6-3030-1000-LTP-RTP</code></p>
+    <p>Prefixes recognised: <code>HFS, HFSB, HFSL, HFSLB, HFSF, HFSFB, HFSLF, HFST, HFSTB, HFSLT, HFSH, HFSC, HFSR, HFSG, HFSP, GFS, GFSP, HFSY, HFSYB, CAF, EFS, NFS, NEFS, HFSMG</code>. Optional leading <code>K</code> (fixed-length stock) is dropped.</p>
+
+    <h4>JLCMC</h4>
+    <p><code>TXCK-{H6|H7}-{spec}-L{lengthMM}[-{alt}…]</code> — e.g. <code>TXCK-H6-3030-L1000-LA-RA</code></p>
+    <p>Spec codes seen: <code>3030, 3030A, 3030B, 3030C, 3030G, 3030H, 3030T, 3030R, 3030RS, 3045M, 3060, 3060A, 3060B, 3060G, 3090, 30120, 30150, 5050S, 6060, 6630, 6630R</code> with optional <code>J</code> prefix for Lightweight tier (<code>J3030</code>, <code>J6060</code>, <code>J6060S</code>, <code>J6630R</code>, <code>J6630RA</code>…).</p>
+  </details>
+
+  <details>
+    <summary>Alteration code map</summary>
+    <table>
+      <tr><th>Function</th><th>MISUMI</th><th>JLCMC</th></tr>
+      <tr><td>End tap, left / right / both</td><td><code>LTP / RTP / TPW</code></td><td><code>LA / RA / DA</code></td></tr>
+      <tr><td>Heli-coil end tap</td><td><code>LHP / RHP / HPW</code></td><td>— (no equivalent)</td></tr>
+      <tr><td>Corner end tap (4-side)</td><td><code>LSP / RSP / SPW</code></td><td>—</td></tr>
+      <tr><td>45° cut — face down (L/R)</td><td><code>LAT45 / RAT45</code></td><td><code>LD / RD</code></td></tr>
+      <tr><td>45° cut — face up</td><td><code>LCT45 / RCT45</code></td><td><code>LU / RU</code></td></tr>
+      <tr><td>45° cut — face forward</td><td><code>LDT45 / RDT45</code></td><td><code>LF / RF</code></td></tr>
+      <tr><td>45° cut — face back</td><td><code>LBT45 / RBT45</code></td><td><code>LB / RB</code></td></tr>
+      <tr><td>High-precision cut (±0.2)</td><td><code>SC</code></td><td>standard for L≤1000</td></tr>
+      <tr><td>C-chamfer both ends</td><td><code>CW</code></td><td>— (specify by note)</td></tr>
+      <tr><td>Wrench-hole — horizontal L/R</td><td><code>AH### / BH###</code></td><td><code>LK-A### / RK-A###</code></td></tr>
+      <tr><td>Wrench-hole — vertical L/R</td><td><code>AV### / BV###</code></td><td><code>LM-A### / RM-A###</code></td></tr>
+      <tr><td>Counterbore — horizontal L/R</td><td><code>XA###/XB### + Z#</code></td><td><code>LC/RC-Z#-A###</code></td></tr>
+      <tr><td>Counterbore — vertical L/R</td><td><code>XC###/XD### + Z#</code></td><td><code>LE/RE-Z#-A###</code></td></tr>
+      <tr><td>Joint-specific holes (intent-only map)</td><td><code>LDH/LSH/LMH</code> (etc.)</td><td><code>LH/LDH</code> (or <code>LG/LDG</code> vertical)</td></tr>
+      <tr><td>Parallel-joint L-hole</td><td><code>JLP</code></td><td>—</td></tr>
+      <tr><td>Labeling / unit number</td><td><code>ZZZ#### / U###</code></td><td>—</td></tr>
+    </table>
+  </details>
+
+  <details>
+    <summary>Important caveats (always relevant)</summary>
+    <ul>
+      <li><strong>M8 end-tap depth:</strong> MISUMI 24 mm vs JLCMC 20 mm. Blind-joint bolts sized to MISUMI engagement may be too long for JLCMC's stock tap depth — spec the deeper tap by note or shorten the bolt.</li>
+      <li><strong>Slot width:</strong> MISUMI 8 mm nominal vs JLCMC 8.2/8.3 mm. M6 T-nuts cross-fit, but tight hammer nuts may feel loose.</li>
+      <li><strong>JLCMC RS radius (R30)</strong> ≠ MISUMI R (R25). Mind the visible corner clearance.</li>
+      <li><strong>Cut tolerance:</strong> JLCMC default ±0.3 mm (L≤1000) is tighter than MISUMI's ±0.5 mm — no alteration needed.</li>
+      <li><strong>Material:</strong> JLCMC = A6063-T5 throughout. MISUMI <code>GFS6</code> = 6061-T6 (no JLCMC equivalent).</li>
+    </ul>
+  </details>
+
+  <footer>
+    Built for 30-series only. Verify all critical translations against vendor drawings before ordering.
+  </footer>
+</main>
+
+<script>
+// ============================================================================
+// Data tables
+// ============================================================================
+
+// MISUMI family prefix → {jlcmcSurface, tier, shapeLetter, warn, noJlcmcMap}
+const MISUMI_FAMILY = {
+  'HFS':   { surface: 'H6', tier: 'std',   shape: ''  },
+  'HFSB':  { surface: 'H7', tier: 'std',   shape: ''  },
+  'HFSL':  { surface: 'H6', tier: 'light', shape: ''  },
+  'HFSLB': { surface: 'H7', tier: 'light', shape: ''  },
+  'HFSF':  { surface: 'H6', tier: 'std',   shape: 'A' },
+  'HFSFB': { surface: 'H7', tier: 'std',   shape: 'A' },
+  'HFSLF': { surface: 'H6', tier: 'light', shape: 'A' },
+  'HFST':  { surface: 'H6', tier: 'std',   shape: 'T' },
+  'HFSTB': { surface: 'H7', tier: 'std',   shape: 'T' },
+  'HFSLT': { surface: 'H6', tier: 'light', shape: 'T' },
+  'HFSH':  { surface: 'H6', tier: 'std',   shape: 'H' },
+  'HFSC':  { surface: 'H6', tier: 'std',   shape: 'C' },
+  'HFSR':  { surface: 'H6', tier: 'std',   shape: 'R',
+            warn: 'MISUMI HFSR6 = R25 corner radius. JLCMC R suffix = R25 (matches); RS = R30 (different).' },
+  'HFSG':  { surface: 'H6', tier: 'heavy', shape: '' },
+  'HFSP':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'HFSP6 = parallel-milled (linear-guide ready). JLCMC has no equivalent.' },
+  'GFSP':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'GFSP6 = parallel-milled + 6061-T6. JLCMC has no equivalent.' },
+  'GFS':   { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'GFS6 = 6061-T6 high-rigidity alloy. JLCMC uses A6063-T5 throughout — material substitution required.' },
+  'HFSY':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'HFSY6 = yellow baked-on finish. JLCMC offers only H6 (natural) or H7 (black).' },
+  'HFSYB': { surface: 'H7', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'HFSYB6 = yellow + black. JLCMC offers only H6 or H7.' },
+  'CAF':   { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'CAF6 = clear coating. JLCMC has no equivalent — closest is H6.' },
+  'EFS':   { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
+            warn: 'EFS6 = economy variant. JLCMC closest is H6.' },
+  'NFS':   { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
+            warn: 'NFS6 = no-finish economy. JLCMC closest is H6.' },
+  'NEFS':  { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
+            warn: 'NEFS6 = no-finish economy. JLCMC closest is H6.' },
+  'HFSMG': { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+            warn: 'HFSMG6 = factory-bent / curved frames. JLCMC has no bending service.' },
+};
+
+// JLCMC section spec (just the number/shape token after the J or not) → MISUMI section + shape suffix
+// Key is what appears after a J or directly, e.g. "3030", "3030A", "3045M", "6630R"
+const JLCMC_SPEC = {
+  '3030':   { section: '3030',   shape: '',  noMisumi: false },
+  '3030A':  { section: '3030',   shape: 'F', noMisumi: false },
+  '3030B':  { section: '3030',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 3030B variant (face-bore) has no direct MISUMI equivalent. Closest base: HFS6-3030.' },
+  '3030C':  { section: '3030',   shape: 'C' },
+  '3030G':  { section: '3030',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 3030G (lightweight + ribs) has no direct MISUMI equivalent.' },
+  '3030H':  { section: '3030',   shape: 'H' },
+  '3030T':  { section: '3030',   shape: 'T' },
+  '3030R':  { section: '3030',   shape: 'R' },
+  '3030RS': { section: '3030',   shape: 'R',  noMisumi: true,
+              warn: 'JLCMC RS = R30. MISUMI HFSR6-3030 is R25. Profile shape differs.' },
+  '3045M':  { section: '3045M',  shape: '',  noMisumi: true,
+              warn: 'JLCMC 3045M = 30×45 trapezoid. Closest MISUMI is HFS45A6-30 (different wedge shape, not interchangeable).' },
+  '3060':   { section: '3060',   shape: ''  },
+  '3060A':  { section: '3060',   shape: 'F' },
+  '3060B':  { section: '3060',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 3060B variant has no direct MISUMI equivalent.' },
+  '3060G':  { section: '3060',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 3060G (ribbed) has no direct MISUMI equivalent.' },
+  '3090':   { section: '3090',   shape: ''  },
+  '30120':  { section: '30120',  shape: ''  },
+  '30150':  { section: '30150',  shape: '',  noMisumi: true,
+              warn: 'JLCMC 30150 has no MISUMI equivalent (MISUMI has 30120 and 30300, no 30150).' },
+  '5050S':  { section: '5050',   shape: '',  noMisumi: false,
+              warn: 'JLCMC 5050S has cross-ribbing. MISUMI HFS6-5050 differs internally — verify drawing.' },
+  '6060':   { section: '6060',   shape: ''  },
+  '6060S':  { section: '6060',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 6060S (structured) has no direct MISUMI equivalent.' },
+  '6630':   { section: '6630',   shape: '',  noMisumi: true,
+              warn: 'JLCMC 6630 (60×60 with two rounded quarters) has no MISUMI single-extrusion equivalent.' },
+  '6630R':  { section: '6630R',  shape: '',  noMisumi: true,
+              warn: 'JLCMC 6630R (60×60 with one rounded quarter) has no MISUMI single-extrusion equivalent.' },
+  '6630RA': { section: '6630RA', shape: '',  noMisumi: true,
+              warn: 'JLCMC 6630RA (60×60 with two rounded quarters) has no MISUMI single-extrusion equivalent.' },
+};
+
+// MISUMI alteration parsers: { match: regex, toJ: fn(matchgroups), notes: string }
+// Each handler returns { code, note }
+const MISUMI_ALT_HANDLERS = [
+  // End tapping
+  { re: /^LTP$/, toJ: () => ({ code: 'LA',
+      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20. Verify Blind-Joint bolt length.' }) },
+  { re: /^RTP$/, toJ: () => ({ code: 'RA',
+      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20. Verify bolt length.' }) },
+  { re: /^TPW$/, toJ: () => ({ code: 'DA',
+      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20 (both ends). Verify bolt length.' }) },
+  // Heli-coil tap (no JLCMC equivalent)
+  { re: /^L?HP$|^RHP$|^HPW$/, toJ: m => ({ code: null,
+      note: 'Heli-coil end tap (' + m[0] + ') has no JLCMC equivalent. Specify by drawing note if needed.', err: true }) },
+  // Corner end taps
+  { re: /^LSP$|^RSP$|^SPW$/, toJ: m => ({ code: null,
+      note: '4-side corner end tap (' + m[0] + ') has no JLCMC equivalent.', err: true }) },
+  // 45° cuts (8 variants)
+  { re: /^LAT45$/, toJ: () => ({ code: 'LD' }) },
+  { re: /^LCT45$/, toJ: () => ({ code: 'LU' }) },
+  { re: /^LDT45$/, toJ: () => ({ code: 'LF' }) },
+  { re: /^LBT45$/, toJ: () => ({ code: 'LB' }) },
+  { re: /^RAT45$/, toJ: () => ({ code: 'RD' }) },
+  { re: /^RCT45$/, toJ: () => ({ code: 'RU' }) },
+  { re: /^RDT45$/, toJ: () => ({ code: 'RF' }) },
+  { re: /^RBT45$/, toJ: () => ({ code: 'RB' }) },
+  // High-precision cut
+  { re: /^SC$/, toJ: () => ({ code: null,
+      note: 'MISUMI SC (±0.2 mm) — JLCMC standard cut is already ±0.3 mm for L≤1000. No code needed.' }) },
+  // C-chamfer
+  { re: /^CW$/, toJ: () => ({ code: null,
+      note: 'CW (C-chamfer both ends) has no JLCMC code — specify by drawing note.', err: true }) },
+  // Labeling / unit
+  { re: /^ZZZ(\d+)$/, toJ: () => ({ code: null,
+      note: 'ZZZ labeling has no JLCMC equivalent.', err: true }) },
+  { re: /^U(\d+)$/, toJ: () => ({ code: null,
+      note: 'U unit-number labeling has no JLCMC equivalent.', err: true }) },
+  // Wrench holes — positions A-E on horizontal (H) or vertical (V) face.
+  // MISUMI A/B/C/D/E are successive positions, not L/R. Face is implied by orientation.
+  // Default the JLCMC translation to left-side (LK horizontal / LM vertical); user must confirm.
+  { re: /^([A-E])H(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'H', letter: m[1], pos: m[2] } }) },
+  { re: /^([A-E])V(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'V', letter: m[1], pos: m[2] } }) },
+  { re: /^LWP$/, toJ: () => ({ code: null,
+      note: 'LWP (wrench-hole aligned with mating tap) — translate by explicit position: use LK-A### with the actual offset.', err: true }) },
+  { re: /^RWP$/, toJ: () => ({ code: null,
+      note: 'RWP — same as LWP. Use RK-A### with explicit position.', err: true }) },
+  // Counterbores — size + position (we collect Z# and X[A-E]### tokens and pair them)
+  // Handled in a special pass below
+  { re: /^Z(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'Z', size: m[1] } }) },
+  // Counterbore positions: face letter (X/Y/Z/W) + position letter (A-E) + offset mm.
+  // X/Y/Z/W select which face of the cross-section the bore goes on (orientation-dependent).
+  { re: /^([XYZW])([A-E])(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'X', face: m[1], side: m[2], pos: m[3] } }) },
+  // D-hole / S-hole / M-hole / L-hole — joint-specific
+  { re: /^L?DH$|^RDH$/, toJ: m => ({ code: 'LH' /* or mirror */,
+      note: m[0] + ' (D-hole for Single Joint, horizontal) → closest JLCMC: LH/RH single horizontal blind hole. Verify diameter & joint hardware.' , translate: true }) },
+  { re: /^L?DV$|^RDV$/, toJ: m => ({ code: 'LG',
+      note: m[0] + ' (D-hole, vertical) → JLCMC LG/RG vertical blind hole. Verify hardware.', translate: true }) },
+  { re: /^LSH$|^RSH$/, toJ: m => ({ code: m[0][0] === 'L' ? 'LDH' : 'RDH',
+      note: m[0] + ' (S-hole for Pre-Assy Double Joint, horizontal) → JLCMC LDH/RDH double horizontal blind. Verify joint hardware.' }) },
+  { re: /^LSV$|^RSV$/, toJ: m => ({ code: m[0][0] === 'L' ? 'LDG' : 'RDG',
+      note: m[0] + ' (S-hole, vertical) → JLCMC LDG/RDG. Verify hardware.' }) },
+  { re: /^LMH$|^RMH$/, toJ: m => ({ code: m[0][0] === 'L' ? 'LH' : 'RH',
+      note: m[0] + ' (M-hole for Post-Assy/Center Joint, horizontal) → JLCMC LH/RH (single) or LDH/RDH (double). Pick by joint count.' }) },
+  { re: /^LMV$|^RMV$/, toJ: m => ({ code: m[0][0] === 'L' ? 'LG' : 'RG',
+      note: m[0] + ' (M-hole, vertical) → JLCMC LG/RG or LDG/RDG.' }) },
+  { re: /^JLP$/, toJ: () => ({ code: null,
+      note: 'JLP (Parallel-Joint L-hole) has no JLCMC equivalent — drill separately or quote.', err: true }) },
+  // End-cap clearance shift
+  { re: /^FL$|^FR$/, toJ: m => ({ code: null,
+      note: m[0] + ' (end-cap clearance shift on wrench hole) has no JLCMC code — specify by note.', err: true }) },
+];
+
+// JLCMC alteration parsers
+const JLCMC_ALT_HANDLERS = [
+  { re: /^LA$/, toM: () => ({ code: 'LTP',
+      note: 'End-tap depth: JLCMC M8×20 → MISUMI M8×24. Verify bolt length.' }) },
+  { re: /^RA$/, toM: () => ({ code: 'RTP',
+      note: 'End-tap depth: JLCMC M8×20 → MISUMI M8×24. Verify bolt length.' }) },
+  { re: /^DA$/, toM: () => ({ code: 'TPW',
+      note: 'End-tap both ends. Depth: JLCMC M8×20 → MISUMI M8×24.' }) },
+  // 45° cuts
+  { re: /^LD$/, toM: () => ({ code: 'LAT45' }) },
+  { re: /^LU$/, toM: () => ({ code: 'LCT45' }) },
+  { re: /^LF$/, toM: () => ({ code: 'LDT45' }) },
+  { re: /^LB$/, toM: () => ({ code: 'LBT45' }) },
+  { re: /^RD$/, toM: () => ({ code: 'RAT45' }) },
+  { re: /^RU$/, toM: () => ({ code: 'RCT45' }) },
+  { re: /^RF$/, toM: () => ({ code: 'RDT45' }) },
+  { re: /^RB$/, toM: () => ({ code: 'RBT45' }) },
+  // Blind holes for connector
+  { re: /^LH$/, toM: () => ({ code: 'LMH',
+      note: 'JLCMC LH (single horizontal blind) → MISUMI LMH (M-hole) is the closest single-hole match; LDH if D-hole geometry needed. Verify joint hardware.' }) },
+  { re: /^RH$/, toM: () => ({ code: 'RMH',
+      note: 'JLCMC RH → MISUMI RMH (M-hole). Verify joint hardware.' }) },
+  { re: /^LDH$/, toM: () => ({ code: 'LSH',
+      note: 'JLCMC LDH (double horizontal blind) → MISUMI LSH (S-hole, Pre-Assy Double Joint) is the closest match.' }) },
+  { re: /^RDH$/, toM: () => ({ code: 'RSH',
+      note: 'JLCMC RDH → MISUMI RSH (S-hole, Pre-Assy Double Joint).' }) },
+  { re: /^LG$/, toM: () => ({ code: 'LMV',
+      note: 'JLCMC LG (vertical blind) → MISUMI LMV (M-hole, vertical).' }) },
+  { re: /^RG$/, toM: () => ({ code: 'RMV', note: 'JLCMC RG → MISUMI RMV.' }) },
+  { re: /^LDG$/, toM: () => ({ code: 'LSV',
+      note: 'JLCMC LDG (double vertical blind) → MISUMI LSV (S-hole, vertical).' }) },
+  { re: /^RDG$/, toM: () => ({ code: 'RSV', note: 'JLCMC RDG → MISUMI RSV.' }) },
+  // Wrench holes with A###/B### position suffixes — handled below (pair LK/RK/LM/RM with A###)
+  // Counterbores with Z# size + A### position — handled below
+];
+
+// ============================================================================
+// Parser & translator
+// ============================================================================
+
+function parseMisumi(input) {
+  const tokens = input.toUpperCase().trim().split(/-+/).filter(Boolean);
+  if (tokens.length < 3) return { err: 'Need at least family-section-length tokens (e.g. HFS6-3030-1000).' };
+
+  let first = tokens[0];
+  if (first.startsWith('K')) first = first.slice(1); // strip stock-cut K
+
+  // Match prefix + 6
+  const m = first.match(/^([A-Z]+)(6)$/);
+  if (!m) return { err: 'Could not parse family prefix from "' + tokens[0] + '". Expected e.g. HFS6, HFSB6, HFSL6.' };
+
+  const prefix = m[1];
+  if (!MISUMI_FAMILY[prefix]) return { err: 'Unknown family prefix "' + prefix + '". See format reference.' };
+
+  const section = tokens[1];
+  if (!/^\d+$/.test(section)) return { err: 'Section "' + section + '" must be numeric (e.g. 3030, 3060).' };
+
+  const length = tokens[2];
+  if (!/^\d+(\.\d+)?$/.test(length)) return { err: 'Length "' + length + '" must be numeric (mm).' };
+
+  return {
+    family: prefix,
+    familyInfo: MISUMI_FAMILY[prefix],
+    section,
+    length: parseFloat(length),
+    alts: tokens.slice(3),
+  };
+}
+
+function parseJlcmc(input) {
+  const tokens = input.toUpperCase().trim().split(/-+/).filter(Boolean);
+  if (tokens.length < 4) return { err: 'Need at least TXCK-{H6|H7}-{spec}-L{len} tokens.' };
+  if (tokens[0] !== 'TXCK') return { err: 'JLCMC part numbers start with TXCK.' };
+  const surface = tokens[1];
+  if (surface !== 'H6' && surface !== 'H7') return { err: 'Surface code must be H6 or H7, got "' + surface + '".' };
+
+  let spec = tokens[2];
+  let tier = 'std';
+  if (spec.startsWith('J')) { tier = 'light'; spec = spec.slice(1); }
+  if (!JLCMC_SPEC[spec]) return { err: 'Unknown JLCMC spec "' + tokens[2] + '". See format reference.' };
+
+  const lenTok = tokens[3];
+  if (!/^L\d+(\.\d+)?$/.test(lenTok)) return { err: 'Length token must be L###, e.g. L1000.' };
+
+  return {
+    surface,
+    tier,
+    spec,
+    specInfo: JLCMC_SPEC[spec],
+    length: parseFloat(lenTok.slice(1)),
+    alts: tokens.slice(4),
+  };
+}
+
+// Translate MISUMI alteration tokens → JLCMC string + notes
+// Handles deferred counterbore Z+X pairing & wrench/counterbore position chains
+function translateAltsMtoJ(alts) {
+  const notes = [];
+  const out = [];
+  const deferred = []; // {kind:'Z',size} and {kind:'X',side,pos}
+
+  for (const tok of alts) {
+    let handled = false;
+    for (const h of MISUMI_ALT_HANDLERS) {
+      const m = tok.match(h.re);
+      if (m) {
+        const r = h.toJ(m);
+        if (r.defer) { deferred.push(r.defer); handled = true; break; }
+        if (r.code) out.push(r.code);
+        if (r.note) notes.push({ text: r.note, err: !!r.err });
+        handled = true;
+        break;
+      }
+    }
+    if (!handled) notes.push({ text: 'Unrecognised MISUMI alteration "' + tok + '" — no translation.', err: true });
+  }
+
+  // Emit deferred wrench-hole groups (H direction → LK, V direction → LM by default).
+  const wHoles = deferred.filter(d => d.kind === 'W');
+  const hHoles = wHoles.filter(d => d.dir === 'H');
+  const vHoles = wHoles.filter(d => d.dir === 'V');
+  if (hHoles.length) {
+    out.push('LK');
+    for (const h of hHoles) out.push(h.letter + h.pos);
+    notes.push({ text: 'Horizontal wrench-hole face defaulted to JLCMC LK (left). Change to RK if needed.', err: false });
+  }
+  if (vHoles.length) {
+    out.push('LM');
+    for (const v of vHoles) out.push(v.letter + v.pos);
+    notes.push({ text: 'Vertical wrench-hole face defaulted to JLCMC LM (left). Change to RM if needed.', err: false });
+  }
+
+  // Pair counterbore Z (size) + face-prefixed positions.
+  // MISUMI uses one face letter (X/Y/Z/W) with up to 5 position letters (A-E) per face.
+  // X/Y/Z/W select which face of the cross-section; A-E are successive positions on that face.
+  // We map face letters → JLCMC LC/RC/LE/RE as a best-guess and warn the user to verify.
+  const zList = deferred.filter(d => d.kind === 'Z');
+  const xList = deferred.filter(d => d.kind === 'X');
+  if (xList.length) {
+    const z = zList[0];
+    if (!z) {
+      notes.push({ text: 'Counterbore position tokens given but no Z size — output incomplete.', err: true });
+    } else {
+      // MISUMI face → JLCMC face guess. The actual cross-section orientation determines which
+      // face is which; this is a default mapping. User should verify against the drawing.
+      const faceToJ = { X: 'LC', Y: 'RC', Z: 'LE', W: 'RE' };
+      // Group positions by face
+      const byFace = {};
+      for (const x of xList) {
+        const j = faceToJ[x.face] || 'LC';
+        if (!byFace[j]) byFace[j] = [];
+        byFace[j].push({ side: x.side, pos: x.pos });
+      }
+      const facesUsed = Object.keys(byFace);
+      for (const j of facesUsed) {
+        out.push(j);
+        out.push('Z' + z.size);
+        for (const p of byFace[j]) out.push(p.side + p.pos);
+      }
+      const misumiFaces = [...new Set(xList.map(x => x.face))];
+      notes.push({
+        text: 'MISUMI counterbore face(s) ' + misumiFaces.join(', ') +
+              ' translated to JLCMC ' + facesUsed.join(', ') +
+              ' by default mapping (X→LC, Y→RC, Z→LE, W→RE). Verify against the cross-section drawing — actual face depends on orientation.',
+        err: false
+      });
+    }
+    if (zList.length > 1) notes.push({ text: 'Multiple Z size tokens — assumed first applies to all positions.', err: false });
+  } else if (zList.length) {
+    notes.push({ text: 'Z size token given without position — counterbore position is required.', err: true });
+  }
+
+  return { out, notes };
+}
+
+// Translate JLCMC alteration tokens → MISUMI string + notes
+// Has to recognise multi-token sequences like "LK-A100" (wrench hole) and "LC-Z6-A100" (counterbore)
+function translateAltsJtoM(alts) {
+  const notes = [];
+  const out = [];
+  let i = 0;
+
+  while (i < alts.length) {
+    const tok = alts[i];
+
+    // Wrench hole: LK/RK/LM/RM followed by successive A###, B###, …
+    // MISUMI doesn't encode the face (L/R) in the code itself, only the direction (H/V).
+    if (/^(LK|RK|LM|RM)$/.test(tok)) {
+      const dir = (tok[1] === 'K') ? 'H' : 'V';
+      const face = tok;
+      let j = i + 1;
+      let any = false;
+      while (j < alts.length && /^[A-E]\d+$/.test(alts[j])) {
+        const letter = alts[j][0];
+        const pos = alts[j].slice(1);
+        out.push(letter + dir + pos);
+        any = true;
+        j++;
+      }
+      if (!any) notes.push({ text: tok + ' wrench-hole code present but no position (A###) follows.', err: true });
+      else notes.push({ text: 'JLCMC face ' + face + ' is not encoded in the MISUMI part number — MISUMI determines face by orientation only.', err: false });
+      i = j;
+      continue;
+    }
+
+    // Counterbore: LC/RC/LE/RE followed by Z# then A###/B###/… (successive positions)
+    if (/^(LC|RC|LE|RE)$/.test(tok)) {
+      const face = tok; // MISUMI implies face by orientation; emit a note
+      let j = i + 1;
+      let zSize = null;
+      if (j < alts.length && /^Z\d+$/.test(alts[j])) { zSize = alts[j].slice(1); j++; }
+      let positions = []; // each {letter, pos}
+      while (j < alts.length && /^[A-E]\d+$/.test(alts[j])) {
+        positions.push({ letter: alts[j][0], pos: alts[j].slice(1) });
+        j++;
+      }
+      if (!zSize) notes.push({ text: face + ' counterbore present but no Z size — translation incomplete.', err: true });
+      if (!positions.length) notes.push({ text: face + ' counterbore present but no A### position.', err: true });
+      if (zSize === '5' || zSize === '12') {
+        notes.push({ text: 'JLCMC Z' + zSize + ' counterbore size has no MISUMI 6-series equivalent. Closest: Z6.', err: true });
+      }
+      const safeZ = (zSize === '5' || zSize === '12') ? '6' : (zSize || '?');
+      if (positions.length) {
+        out.push('Z' + safeZ);
+        // MISUMI form preserves the position letter: X<letter><pos>
+        for (const p of positions) out.push('X' + p.letter + p.pos);
+      }
+      notes.push({ text: 'JLCMC face ' + face + ' translates to MISUMI by orientation only — MISUMI does not encode the face in the part number.', err: false });
+      i = j;
+      continue;
+    }
+
+    // Single-token handlers
+    let handled = false;
+    for (const h of JLCMC_ALT_HANDLERS) {
+      const m = tok.match(h.re);
+      if (m) {
+        const r = h.toM(m);
+        if (r.code) out.push(r.code);
+        if (r.note) notes.push({ text: r.note, err: !!r.err });
+        handled = true;
+        break;
+      }
+    }
+    if (!handled) notes.push({ text: 'Unrecognised JLCMC alteration "' + tok + '" — no translation.', err: true });
+    i++;
+  }
+
+  return { out, notes };
+}
+
+// Top-level translators
+function misumiToJlcmc(input) {
+  const parsed = parseMisumi(input);
+  if (parsed.err) return { err: parsed.err };
+  const fi = parsed.familyInfo;
+  const notes = [];
+
+  if (fi.warn) notes.push({ text: fi.warn, err: !!fi.noJlcmc });
+
+  // Section → JLCMC spec
+  const validSections = { '3030':1, '3060':1, '3090':1, '30120':1, '30150':1, '5050':1, '6060':1 };
+  let jlcmcSpec = null;
+  if (parsed.section === '5050') jlcmcSpec = '5050S';
+  else if (validSections[parsed.section]) jlcmcSpec = parsed.section + fi.shape;
+  else {
+    notes.push({ text: 'MISUMI section ' + parsed.section + ' has no direct JLCMC equivalent.', err: true });
+  }
+
+  let specToken = jlcmcSpec || ('?' + parsed.section);
+  if (fi.tier === 'light') specToken = 'J' + specToken;
+
+  // Length: round to 0.5 mm
+  const len = Math.round(parsed.length * 2) / 2;
+  if (len !== parsed.length) notes.push({ text: 'Length rounded to JLCMC 0.5 mm increment: ' + len + ' mm.', err: false });
+
+  // Alterations
+  const altRes = translateAltsMtoJ(parsed.alts);
+  notes.push(...altRes.notes);
+
+  let parts = ['TXCK', fi.surface, specToken, 'L' + len];
+  if (altRes.out.length) parts = parts.concat(altRes.out);
+
+  return { result: parts.join('-'), notes, hardError: fi.noJlcmc };
+}
+
+function jlcmcToMisumi(input) {
+  const parsed = parseJlcmc(input);
+  if (parsed.err) return { err: parsed.err };
+  const si = parsed.specInfo;
+  const notes = [];
+
+  if (si.warn) notes.push({ text: si.warn, err: !!si.noMisumi });
+
+  // Build MISUMI family prefix
+  // base: HFS (clear) or HFSB (black), with optional L for lightweight tier
+  // shape letter from spec (F/T/H/C/R) goes between HFS and L
+  const shape = si.shape || ''; // F, T, H, C, R, or ''
+  let prefix;
+  if (parsed.surface === 'H6') {
+    if (parsed.tier === 'light') prefix = shape ? ('HFSL' + shape) : 'HFSL';
+    else prefix = 'HFS' + shape;
+  } else { // H7 black
+    if (parsed.tier === 'light') prefix = 'HFSLB' + shape;
+    else prefix = 'HFSB' + shape;
+  }
+  // Sanity: not all combos exist; warn for unusual ones
+  if (parsed.tier === 'light' && shape && !['F','T'].includes(shape)) {
+    notes.push({ text: 'Lightweight tier with shape "' + shape + '" — MISUMI offers limited HFSL combinations. Verify.', err: false });
+  }
+
+  const section = si.section;
+
+  // Length
+  const len = parsed.length;
+
+  // Alterations
+  const altRes = translateAltsJtoM(parsed.alts);
+  notes.push(...altRes.notes);
+
+  let parts = [prefix + '6', section, String(len)];
+  if (altRes.out.length) parts = parts.concat(altRes.out);
+
+  return { result: parts.join('-'), notes, hardError: si.noMisumi };
+}
+
+// ============================================================================
+// Plain-English decoders — explain what each segment of a part number means.
+// Returns array of { token, meaning, detail?, unknown? } rows.
+// ============================================================================
+
+const SHAPE_NAME = {
+  '':  'square cross-section, 4 slots',
+  'A': '3 slots + 1 flat face',
+  'F': '3 slots + 1 flat face',
+  'T': '2 slots + 2 flats (T-shape)',
+  'H': '2 slots on opposite sides only',
+  'C': '1 slot + 3 flats',
+  'R': 'quarter-round corner (R25)',
+};
+
+const MISUMI_TIER_NAME = {
+  std:   'standard wall',
+  light: 'lightweight (thinner web)',
+  heavy: 'heavy wall',
+  econ:  'economy / no-finish',
+};
+
+function explainMisumi(partStr) {
+  const parsed = parseMisumi(partStr);
+  if (parsed.err) return [{ token: partStr, meaning: parsed.err, unknown: true }];
+  const fi = parsed.familyInfo;
+  const rows = [];
+
+  const surf = fi.surface === 'H6' ? 'clear / natural anodize' :
+               fi.surface === 'H7' ? 'black anodize' : '(special finish)';
+  rows.push({
+    token: parsed.family + '6',
+    meaning: '6-series (30 mm base, 8 mm slot)',
+    detail: [MISUMI_TIER_NAME[fi.tier] || fi.tier, surf, SHAPE_NAME[fi.shape] || fi.shape].filter(Boolean).join(' · '),
+  });
+
+  const w = parsed.section.length === 4 ? parsed.section.slice(0,2) : parsed.section.slice(0,2);
+  const h = parsed.section.length === 4 ? parsed.section.slice(2)   : parsed.section.slice(2);
+  rows.push({
+    token: parsed.section,
+    meaning: w + ' × ' + h + ' mm cross-section',
+  });
+
+  rows.push({
+    token: String(parsed.length),
+    meaning: parsed.length + ' mm length',
+    detail: 'tolerance ±0.5 mm (±0.2 with SC code; max 1500 mm)',
+  });
+
+  // Alterations: re-run handler dispatch but capture meanings
+  const MISUMI_ALT_MEANINGS = {
+    LTP: 'tap left end face (M8 × 24 deep)',
+    RTP: 'tap right end face (M8 × 24 deep)',
+    TPW: 'tap both end faces (M8 × 24 deep each)',
+    LHP: 'heli-coil insert tap, left end (reduces to M5)',
+    RHP: 'heli-coil insert tap, right end',
+    HPW: 'heli-coil insert tap, both ends',
+    LSP: '4-corner end tap, left',
+    RSP: '4-corner end tap, right',
+    SPW: '4-corner end tap, both',
+    LAT45: 'left end 45° cut, face down',
+    LCT45: 'left end 45° cut, face up',
+    LDT45: 'left end 45° cut, face forward',
+    LBT45: 'left end 45° cut, face back',
+    RAT45: 'right end 45° cut, face down',
+    RCT45: 'right end 45° cut, face up',
+    RDT45: 'right end 45° cut, face forward',
+    RBT45: 'right end 45° cut, face back',
+    SC: 'high-precision cut (±0.2 mm; only L ≤ 1500)',
+    CW: 'C-chamfer both end faces',
+    LWP: 'wrench access hole, left, aligned to mating part',
+    RWP: 'wrench access hole, right, aligned to mating part',
+    FL: 'wrench-hole offset for left end cap (3 mm)',
+    FR: 'wrench-hole offset for right end cap (3 mm)',
+    JLP: 'Parallel-Joint L-hole',
+  };
+  const COUNTERBORE_Z = {
+    '5': 'M5 cap (Ø5.5 / Ø9.5 head)',
+    '6': 'M6 cap (Ø6.5 / Ø11 head)',
+    '8': 'M8 cap (Ø9 / Ø14 head)',
+    '12': 'M12 cap (Ø13 / Ø20 head)',
+  };
+
+  let zSizeForCounterbore = null;
+  for (const tok of parsed.alts) {
+    if (MISUMI_ALT_MEANINGS[tok]) {
+      rows.push({ token: tok, meaning: MISUMI_ALT_MEANINGS[tok] });
+      continue;
+    }
+    let m;
+    if (m = tok.match(/^Z(\d+)$/)) {
+      zSizeForCounterbore = m[1];
+      rows.push({ token: tok, meaning: 'counterbore size — ' + (COUNTERBORE_Z[m[1]] || ('Z' + m[1])) });
+      continue;
+    }
+    if (m = tok.match(/^([XYZW])([A-E])(\d+)$/)) {
+      rows.push({ token: tok, meaning: 'counterbore on face ' + m[1] + ', position ' + m[2] + ' at ' + m[3] + ' mm from left end' });
+      continue;
+    }
+    if (m = tok.match(/^([A-E])H(\d+)$/)) {
+      rows.push({ token: tok, meaning: 'wrench-hole, horizontal through, position ' + m[1] + ' at ' + m[2] + ' mm from left end' });
+      continue;
+    }
+    if (m = tok.match(/^([A-E])V(\d+)$/)) {
+      rows.push({ token: tok, meaning: 'wrench-hole, vertical through, position ' + m[1] + ' at ' + m[2] + ' mm from left end' });
+      continue;
+    }
+    if (m = tok.match(/^([LR])(DH|DV|SH|SV|MH|MV)$/)) {
+      const side = m[1] === 'L' ? 'left' : 'right';
+      const kind = { DH: 'D-hole (Single Joint), horizontal', DV: 'D-hole (Single Joint), vertical',
+                     SH: 'S-hole (Pre-Assy Double Joint), horizontal', SV: 'S-hole, vertical',
+                     MH: 'M-hole (Post-Assy / Center Joint), horizontal', MV: 'M-hole, vertical' }[m[2]];
+      rows.push({ token: tok, meaning: side + ' end ' + kind });
+      continue;
+    }
+    if (m = tok.match(/^ZZZ(\d+)$/)) {
+      rows.push({ token: tok, meaning: 'serial-number label "' + m[1] + '"' });
+      continue;
+    }
+    if (m = tok.match(/^U(\d+)$/)) {
+      rows.push({ token: tok, meaning: 'unit-number label "' + m[1] + '"' });
+      continue;
+    }
+    rows.push({ token: tok, meaning: 'unknown alteration', unknown: true });
+  }
+
+  return rows;
+}
+
+function explainJlcmc(partStr) {
+  const parsed = parseJlcmc(partStr);
+  if (parsed.err) return [{ token: partStr, meaning: parsed.err, unknown: true }];
+  const rows = [];
+  rows.push({ token: 'TXCK', meaning: 'JLCMC Euro Standard category code' });
+  rows.push({
+    token: parsed.surface,
+    meaning: parsed.surface === 'H6' ? 'natural-color sandblasting oxidation' :
+                                       'black sandblasting oxidation',
+  });
+
+  const tierStr = parsed.tier === 'light' ? 'Lightweight tier (thinner web)' : 'Standard tier';
+  const si = parsed.specInfo;
+  const shapeName = SHAPE_NAME[si.shape] || (si.shape ? '("' + si.shape + '" variant)' : 'square, 4 slots');
+  const specToken = (parsed.tier === 'light' ? 'J' : '') + parsed.spec;
+  const w = si.section.slice(0,2), h = si.section.length >= 4 ? si.section.slice(2,4) : si.section.slice(2);
+  rows.push({
+    token: specToken,
+    meaning: w + ' × ' + h + ' mm cross-section',
+    detail: tierStr + ' · ' + shapeName,
+  });
+
+  rows.push({
+    token: 'L' + parsed.length,
+    meaning: parsed.length + ' mm length',
+    detail: 'tolerance ±0.3 mm (L ≤ 1000) or ±0.5 mm (L > 1000); 0.5 mm increment',
+  });
+
+  // Alteration tokens — walk with same logic as translator, but capture meanings.
+  const JLCMC_ALT_MEANINGS = {
+    LA: 'tap left end face (M8 × 20 deep)',
+    RA: 'tap right end face (M8 × 20 deep)',
+    DA: 'tap both end faces (M8 × 20 deep each)',
+    LD: 'left end 45° cut, face down',
+    LU: 'left end 45° cut, face up',
+    LF: 'left end 45° cut, face forward',
+    LB: 'left end 45° cut, face back',
+    RD: 'right end 45° cut, face down',
+    RU: 'right end 45° cut, face up',
+    RF: 'right end 45° cut, face forward',
+    RB: 'right end 45° cut, face back',
+    LH: 'single blind hole, left horizontal (for connector)',
+    RH: 'single blind hole, right horizontal',
+    LDH: 'double blind holes, left horizontal',
+    RDH: 'double blind holes, right horizontal',
+    LG: 'single blind hole, left vertical',
+    RG: 'single blind hole, right vertical',
+    LDG: 'double blind holes, left vertical',
+    RDG: 'double blind holes, right vertical',
+  };
+  const COUNTERBORE_Z = {
+    '5': 'M5 cap (Ø5.5 / Ø9.5 head)',
+    '6': 'M6 cap (Ø6.5 / Ø11 head)',
+    '8': 'M8 cap (Ø9 / Ø14 head)',
+    '12': 'M12 cap (Ø13 / Ø20 head, slot 10.2)',
+  };
+  const FACE_NAME = {
+    LK: 'left horizontal', RK: 'right horizontal',
+    LM: 'left vertical',   RM: 'right vertical',
+    LC: 'left horizontal', RC: 'right horizontal',
+    LE: 'left vertical',   RE: 'right vertical',
+  };
+
+  let i = 0;
+  while (i < parsed.alts.length) {
+    const tok = parsed.alts[i];
+    if (JLCMC_ALT_MEANINGS[tok]) {
+      rows.push({ token: tok, meaning: JLCMC_ALT_MEANINGS[tok] });
+      i++; continue;
+    }
+    if (/^(LK|RK|LM|RM)$/.test(tok)) {
+      rows.push({ token: tok, meaning: 'wrench-hole — ' + FACE_NAME[tok] + ' face' });
+      i++;
+      while (i < parsed.alts.length && /^[A-E]\d+$/.test(parsed.alts[i])) {
+        const t = parsed.alts[i];
+        rows.push({ token: t, meaning: '  ↳ position ' + t[0] + ' at ' + t.slice(1) + ' mm from left end' });
+        i++;
+      }
+      continue;
+    }
+    if (/^(LC|RC|LE|RE)$/.test(tok)) {
+      rows.push({ token: tok, meaning: 'counterbore — ' + FACE_NAME[tok] + ' face' });
+      i++;
+      // Z size
+      let m;
+      if (i < parsed.alts.length && (m = parsed.alts[i].match(/^Z(\d+)$/))) {
+        rows.push({ token: parsed.alts[i], meaning: '  ↳ size — ' + (COUNTERBORE_Z[m[1]] || ('Z' + m[1])) });
+        i++;
+      }
+      // positions
+      while (i < parsed.alts.length && /^[A-E]\d+$/.test(parsed.alts[i])) {
+        const t = parsed.alts[i];
+        rows.push({ token: t, meaning: '  ↳ position ' + t[0] + ' at ' + t.slice(1) + ' mm from left end' });
+        i++;
+      }
+      continue;
+    }
+    rows.push({ token: tok, meaning: 'unknown alteration', unknown: true });
+    i++;
+  }
+
+  return rows;
+}
+
+// ============================================================================
+// UI wiring
+// ============================================================================
+
+let direction = 'MtoJ';
+const EXAMPLES = {
+  MtoJ: ['HFS6-3030-1000', 'HFSB6-3030-1000-LTP-RTP', 'HFSL6-3060-500-LTP', 'HFSF6-3030-800-RAT45',
+         'HFS6-3030-1200-Z6-XA100-XB200', 'GFS6-3030-500', 'HFSR6-3030-400'],
+  JtoM: ['TXCK-H6-3030-L1000', 'TXCK-H7-3030-L1000-DA', 'TXCK-H6-J3030T-L800-LU',
+         'TXCK-H6-3060A-L500-LA-RA', 'TXCK-H6-3030-L1200-LC-Z6-A100-B200',
+         'TXCK-H6-3045M-L500', 'TXCK-H6-6630R-L500'],
+};
+
+function setDirection(d) {
+  direction = d;
+  document.getElementById('dirMtoJ').classList.toggle('active', d === 'MtoJ');
+  document.getElementById('dirJtoM').classList.toggle('active', d === 'JtoM');
+  document.getElementById('input').placeholder =
+    d === 'MtoJ' ? 'e.g. HFS6-3030-1000-LTP-RTP' : 'e.g. TXCK-H6-3030-L1000-LA-RA';
+  renderExamples();
+  doTranslate();
+}
+
+function renderExamples() {
+  const el = document.getElementById('examples');
+  const ex = EXAMPLES[direction];
+  el.innerHTML = 'Examples: ' + ex.map(s =>
+    '<button onclick="useExample(\'' + s + '\')">' + s + '</button>').join('');
+}
+
+function useExample(s) {
+  document.getElementById('input').value = s;
+  doTranslate();
+}
+
+function renderBreakdown(inputStr, outputStr) {
+  const el = document.getElementById('breakdown');
+  el.innerHTML = '';
+  if (!inputStr) return;
+
+  const inputIsMisumi = direction === 'MtoJ';
+  const inputRows  = inputIsMisumi ? explainMisumi(inputStr) : explainJlcmc(inputStr);
+  const outputRows = outputStr
+    ? (inputIsMisumi ? explainJlcmc(outputStr) : explainMisumi(outputStr))
+    : null;
+
+  const inputLabel  = inputIsMisumi ? 'MISUMI input' : 'JLCMC input';
+  const outputLabel = inputIsMisumi ? 'JLCMC output' : 'MISUMI output';
+
+  el.appendChild(buildPanel(inputLabel,  inputRows));
+  if (outputRows) el.appendChild(buildPanel(outputLabel, outputRows));
+}
+
+function buildPanel(label, rows) {
+  const panel = document.createElement('div');
+  panel.className = 'breakdown-side';
+  const h = document.createElement('h3');
+  h.textContent = label;
+  panel.appendChild(h);
+  for (const r of rows) {
+    const row = document.createElement('div');
+    row.className = 'breakdown-row' + (r.unknown ? ' unknown' : '');
+    const tok = document.createElement('span');
+    tok.className = 'tok';
+    tok.textContent = r.token;
+    const meaning = document.createElement('span');
+    meaning.className = 'meaning';
+    meaning.textContent = r.meaning;
+    if (r.detail) {
+      const d = document.createElement('span');
+      d.className = 'detail';
+      d.textContent = r.detail;
+      meaning.appendChild(d);
+    }
+    row.appendChild(tok);
+    row.appendChild(meaning);
+    panel.appendChild(row);
+  }
+  return panel;
+}
+
+function doTranslate() { // 'translate' is a reserved DOM property — don't use it as a function name
+  const input = document.getElementById('input').value.trim();
+  const out = document.getElementById('output');
+  const notes = document.getElementById('notes');
+  const btn = document.getElementById('copyBtn');
+
+  notes.innerHTML = '';
+  document.getElementById('breakdown').innerHTML = '';
+
+  if (!input) {
+    out.textContent = '—';
+    out.className = 'output';
+    btn.disabled = true;
+    return;
+  }
+
+  const fn = direction === 'MtoJ' ? misumiToJlcmc : jlcmcToMisumi;
+  const r = fn(input);
+
+  if (r.err) {
+    out.textContent = r.err;
+    out.className = 'output error';
+    btn.disabled = true;
+    renderBreakdown(input, null);
+    return;
+  }
+
+  out.textContent = r.result || '—';
+  out.className = 'output success' + (r.hardError ? ' error' : '');
+  btn.disabled = !r.result;
+
+  renderBreakdown(input, r.result);
+
+  for (const n of r.notes) {
+    const div = document.createElement('div');
+    div.className = 'note' + (n.err ? ' err' : '');
+    div.textContent = n.text;
+    notes.appendChild(div);
+  }
+}
+
+function copyOutput() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const original = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1200);
+  });
+}
+
+renderExamples();
+</script>
+</body>
+</html>
