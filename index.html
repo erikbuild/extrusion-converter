@@ -244,12 +244,29 @@
     padding: 16px;
   }
   footer a { color: var(--accent); }
+
+  .disclaimer {
+    background: #fff3cd;
+    border: 1px solid #e0b020;
+    border-left: 5px solid #c08010;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin: 16px 0 0;
+    font-size: 13px;
+    color: #5a4010;
+    line-height: 1.5;
+  }
+  .disclaimer strong { color: #3a2810; }
 </style>
 </head>
 <body>
 <header>
   <h1>MISUMI ↔ JLCMC 30-Series Translator</h1>
   <p>30 mm base aluminum extrusion. Convert MISUMI HFS6 part numbers ↔ JLCMC TXCK Euro Standard 30 part numbers.</p>
+  <div class="disclaimer">
+    <strong>No warranty. Verify before you order.</strong>
+    This tool is provided as-is for reference only. Translations are heuristic and the underlying catalogs evolve — the author is <strong>not responsible</strong> if this gives wrong answers and you end up with the wrong parts. <strong>Double-check every translation</strong> against the current MISUMI and JLCMC catalogs (including drawings, dimensions, tap depths, and face/orientation conventions) before placing any order.
+  </div>
 </header>
 
 <main>
@@ -745,10 +762,10 @@ function misumiToJlcmc(input) {
   if (parsed.section === '5050') jlcmcSpec = '5050S';
   else if (validSections[parsed.section]) jlcmcSpec = parsed.section + fi.shape;
   else {
-    notes.push({ text: 'MISUMI section ' + parsed.section + ' has no direct JLCMC equivalent.', err: true });
+    return { err: 'MISUMI section ' + parsed.section + ' has no direct JLCMC 30-series equivalent. JLCMC catalog covers 3030, 3060, 3090, 30120, 30150, 5050, 6060.' };
   }
 
-  let specToken = jlcmcSpec || ('?' + parsed.section);
+  let specToken = jlcmcSpec;
   if (fi.tier === 'light') specToken = 'J' + specToken;
 
   // Length: round to 0.5 mm
