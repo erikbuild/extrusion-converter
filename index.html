@@ -639,10 +639,11 @@ function translateAltsMtoJ(alts) {
     if (!z) {
       notes.push({ text: 'Counterbore position tokens given but no Z size — output incomplete.', err: true });
     } else {
-      // MISUMI face → JLCMC face guess. The actual cross-section orientation determines which
-      // face is which; this is a default mapping. User should verify against the drawing.
-      const faceToJ = { X: 'LC', Y: 'RC', Z: 'LE', W: 'RE' };
-      // Group positions by face
+      // MISUMI face letter → JLCMC face. There's no authoritative cross-vendor table for
+      // this; the mapping below is calibrated against one verified 3060 example (Y→LC)
+      // and inferred for the other three. THE OUTPUT FACE MUST BE VERIFIED AGAINST THE
+      // ACTUAL CROSS-SECTION DRAWING — different profile shapes will swap face letters.
+      const faceToJ = { X: 'RC', Y: 'LC', Z: 'RE', W: 'LE' };
       const byFace = {};
       for (const x of xList) {
         const j = faceToJ[x.face] || 'LC';
@@ -657,10 +658,10 @@ function translateAltsMtoJ(alts) {
       }
       const misumiFaces = [...new Set(xList.map(x => x.face))];
       notes.push({
-        text: 'MISUMI counterbore face(s) ' + misumiFaces.join(', ') +
-              ' translated to JLCMC ' + facesUsed.join(', ') +
-              ' by default mapping (X→LC, Y→RC, Z→LE, W→RE). Verify against the cross-section drawing — actual face depends on orientation.',
-        err: false
+        text: 'COUNTERBORE FACE — translated MISUMI face ' + misumiFaces.join(', ') +
+              ' → JLCMC ' + facesUsed.join(', ') +
+              '. This mapping is an INFORMED GUESS (default: X→RC, Y→LC, Z→RE, W→LE). MISUMI does not publish a cross-vendor face-letter table — VERIFY against the part drawing. If the wrong face is targeted, swap L↔R (e.g. LC ↔ RC) in the output before ordering.',
+        err: true
       });
     }
     if (zList.length > 1) notes.push({ text: 'Multiple Z size tokens — assumed first applies to all positions.', err: false });
@@ -766,7 +767,16 @@ function misumiToJlcmc(input) {
   }
 
   let specToken = jlcmcSpec;
-  if (fi.tier === 'light') specToken = 'J' + specToken;
+  // JLCMC Lightweight (J) tier is only catalogued for a subset of sections.
+  const JLCMC_LIGHT_OK = new Set(['3030', '3060', '3090', '6060']);
+  if (fi.tier === 'light') {
+    if (JLCMC_LIGHT_OK.has(parsed.section)) {
+      specToken = 'J' + specToken;
+    } else {
+      notes.push({ text: 'MISUMI lightweight (' + parsed.family + '6) at section ' + parsed.section +
+                         ' has no JLCMC Lightweight equivalent — JLCMC J-tier is only available for 3030, 3060, 3090, 6060. Translation falls back to Standard tier — wall thickness will differ.', err: true });
+    }
+  }
 
   // Length: round to 0.5 mm
   const len = Math.round(parsed.length * 2) / 2;
