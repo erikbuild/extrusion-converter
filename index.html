@@ -614,18 +614,27 @@ function translateAltsMtoJ(alts) {
   }
 
   // Emit deferred wrench-hole groups (H direction → LK, V direction → LM by default).
+  // MISUMI positions are ABSOLUTE from the left end; JLCMC positions are INCREMENTAL
+  // (A from left end, B from A, C from B, …). Convert by differencing.
   const wHoles = deferred.filter(d => d.kind === 'W');
-  const hHoles = wHoles.filter(d => d.dir === 'H');
-  const vHoles = wHoles.filter(d => d.dir === 'V');
-  if (hHoles.length) {
-    out.push('LK');
-    for (const h of hHoles) out.push(h.letter + h.pos);
-    notes.push({ text: 'Horizontal wrench-hole face defaulted to JLCMC LK (left). Change to RK if needed.', err: false });
-  }
-  if (vHoles.length) {
-    out.push('LM');
-    for (const v of vHoles) out.push(v.letter + v.pos);
-    notes.push({ text: 'Vertical wrench-hole face defaulted to JLCMC LM (left). Change to RM if needed.', err: false });
+  const emitWrenchGroup = (face, holes) => {
+    if (!holes.length) return;
+    // sort by absolute position (the letter A-E is the row index, position is the mm value)
+    holes.sort((a, b) => parseFloat(a.pos) - parseFloat(b.pos));
+    out.push(face);
+    let prev = 0;
+    const letters = ['A','B','C','D','E'];
+    for (let k = 0; k < holes.length; k++) {
+      const abs = parseFloat(holes[k].pos);
+      const incr = abs - prev;
+      out.push(letters[k] + (incr % 1 === 0 ? incr : incr.toFixed(1)));
+      prev = abs;
+    }
+  };
+  emitWrenchGroup('LK', wHoles.filter(d => d.dir === 'H'));
+  emitWrenchGroup('LM', wHoles.filter(d => d.dir === 'V'));
+  if (wHoles.length) {
+    notes.push({ text: 'Wrench-hole positions converted from MISUMI absolute (mm from left end) to JLCMC incremental (A from left, B from A, …). Face defaulted to L-side (LK / LM) — change to R-side if needed.', err: false });
   }
 
   // Pair counterbore Z (size) + face-prefixed positions.
@@ -651,10 +660,20 @@ function translateAltsMtoJ(alts) {
         byFace[j].push({ side: x.side, pos: x.pos });
       }
       const facesUsed = Object.keys(byFace);
+      const letters = ['A','B','C','D','E'];
       for (const j of facesUsed) {
         out.push(j);
         out.push('Z' + z.size);
-        for (const p of byFace[j]) out.push(p.side + p.pos);
+        // MISUMI positions are ABSOLUTE; JLCMC positions are INCREMENTAL.
+        // Sort by absolute mm value then emit gaps as A/B/C/D/E.
+        const holes = byFace[j].slice().sort((a, b) => parseFloat(a.pos) - parseFloat(b.pos));
+        let prev = 0;
+        for (let k = 0; k < holes.length; k++) {
+          const abs = parseFloat(holes[k].pos);
+          const incr = abs - prev;
+          out.push(letters[k] + (incr % 1 === 0 ? incr : incr.toFixed(1)));
+          prev = abs;
+        }
       }
       const misumiFaces = [...new Set(xList.map(x => x.face))];
       notes.push({
@@ -662,6 +681,10 @@ function translateAltsMtoJ(alts) {
               ' → JLCMC ' + facesUsed.join(', ') +
               '. This mapping is an INFORMED GUESS (default: X→RC, Y→LC, Z→RE, W→LE). MISUMI does not publish a cross-vendor face-letter table — VERIFY against the part drawing. If the wrong face is targeted, swap L↔R (e.g. LC ↔ RC) in the output before ordering.',
         err: true
+      });
+      notes.push({
+        text: 'Counterbore positions converted from MISUMI absolute (mm from left end) to JLCMC incremental (A from left, B from A, C from B, …).',
+        err: false
       });
     }
     if (zList.length > 1) notes.push({ text: 'Multiple Z size tokens — assumed first applies to all positions.', err: false });
@@ -682,49 +705,59 @@ function translateAltsJtoM(alts) {
   while (i < alts.length) {
     const tok = alts[i];
 
-    // Wrench hole: LK/RK/LM/RM followed by successive A###, B###, …
+    // Wrench hole: LK/RK/LM/RM followed by successive A###, B###, … (JLCMC incremental positions)
     // MISUMI doesn't encode the face (L/R) in the code itself, only the direction (H/V).
     if (/^(LK|RK|LM|RM)$/.test(tok)) {
       const dir = (tok[1] === 'K') ? 'H' : 'V';
       const face = tok;
       let j = i + 1;
-      let any = false;
-      while (j < alts.length && /^[A-E]\d+$/.test(alts[j])) {
-        const letter = alts[j][0];
-        const pos = alts[j].slice(1);
-        out.push(letter + dir + pos);
-        any = true;
+      const incr = [];
+      while (j < alts.length && /^[A-E]\d+(\.\d+)?$/.test(alts[j])) {
+        incr.push({ letter: alts[j][0], val: parseFloat(alts[j].slice(1)) });
         j++;
       }
-      if (!any) notes.push({ text: tok + ' wrench-hole code present but no position (A###) follows.', err: true });
-      else notes.push({ text: 'JLCMC face ' + face + ' is not encoded in the MISUMI part number — MISUMI determines face by orientation only.', err: false });
+      if (!incr.length) {
+        notes.push({ text: tok + ' wrench-hole code present but no position (A###) follows.', err: true });
+      } else {
+        // Convert JLCMC incremental → MISUMI absolute (cumulative sum).
+        let acc = 0;
+        for (const h of incr) { acc += h.val; out.push(h.letter + dir + (acc % 1 === 0 ? acc : acc.toFixed(1))); }
+        notes.push({ text: 'Wrench-hole positions converted from JLCMC incremental (A from left, B from A, …) to MISUMI absolute (mm from left end). Face ' + face + ' not encoded in MISUMI — orientation only.', err: false });
+      }
       i = j;
       continue;
     }
 
-    // Counterbore: LC/RC/LE/RE followed by Z# then A###/B###/… (successive positions)
+    // Counterbore: LC/RC/LE/RE followed by Z# then A###/B###/… (JLCMC incremental positions)
     if (/^(LC|RC|LE|RE)$/.test(tok)) {
-      const face = tok; // MISUMI implies face by orientation; emit a note
+      const face = tok;
       let j = i + 1;
       let zSize = null;
       if (j < alts.length && /^Z\d+$/.test(alts[j])) { zSize = alts[j].slice(1); j++; }
-      let positions = []; // each {letter, pos}
-      while (j < alts.length && /^[A-E]\d+$/.test(alts[j])) {
-        positions.push({ letter: alts[j][0], pos: alts[j].slice(1) });
+      const incr = [];
+      while (j < alts.length && /^[A-E]\d+(\.\d+)?$/.test(alts[j])) {
+        incr.push({ letter: alts[j][0], val: parseFloat(alts[j].slice(1)) });
         j++;
       }
       if (!zSize) notes.push({ text: face + ' counterbore present but no Z size — translation incomplete.', err: true });
-      if (!positions.length) notes.push({ text: face + ' counterbore present but no A### position.', err: true });
+      if (!incr.length) notes.push({ text: face + ' counterbore present but no A### position.', err: true });
       if (zSize === '5' || zSize === '12') {
         notes.push({ text: 'JLCMC Z' + zSize + ' counterbore size has no MISUMI 6-series equivalent. Closest: Z6.', err: true });
       }
       const safeZ = (zSize === '5' || zSize === '12') ? '6' : (zSize || '?');
-      if (positions.length) {
+      // Default MISUMI face letter — emit as X. User adjusts if needed (MISUMI face is orientation-implied).
+      const xLetter = 'X';
+      if (incr.length) {
         out.push('Z' + safeZ);
-        // MISUMI form preserves the position letter: X<letter><pos>
-        for (const p of positions) out.push('X' + p.letter + p.pos);
+        // Convert JLCMC incremental → MISUMI absolute (cumulative sum).
+        let acc = 0;
+        for (const h of incr) {
+          acc += h.val;
+          out.push(xLetter + h.letter + (acc % 1 === 0 ? acc : acc.toFixed(1)));
+        }
+        notes.push({ text: 'Counterbore positions converted from JLCMC incremental → MISUMI absolute (mm from left end).', err: false });
       }
-      notes.push({ text: 'JLCMC face ' + face + ' translates to MISUMI by orientation only — MISUMI does not encode the face in the part number.', err: false });
+      notes.push({ text: 'JLCMC face ' + face + ' translates to MISUMI face letter ' + xLetter + ' by default — MISUMI does not name faces in the part number; the actual face is determined by the part-orientation rule. Verify against the drawing.', err: false });
       i = j;
       continue;
     }
@@ -927,16 +960,16 @@ function explainMisumi(partStr) {
       rows.push({ token: tok, meaning: 'counterbore size — ' + (COUNTERBORE_Z[m[1]] || ('Z' + m[1])) });
       continue;
     }
-    if (m = tok.match(/^([XYZW])([A-E])(\d+)$/)) {
-      rows.push({ token: tok, meaning: 'counterbore on face ' + m[1] + ', position ' + m[2] + ' at ' + m[3] + ' mm from left end' });
+    if (m = tok.match(/^([XYZW])([A-E])(\d+(\.\d+)?)$/)) {
+      rows.push({ token: tok, meaning: 'counterbore on face ' + m[1] + ', position ' + m[2] + ' at ' + m[3] + ' mm from left end (absolute)' });
       continue;
     }
-    if (m = tok.match(/^([A-E])H(\d+)$/)) {
-      rows.push({ token: tok, meaning: 'wrench-hole, horizontal through, position ' + m[1] + ' at ' + m[2] + ' mm from left end' });
+    if (m = tok.match(/^([A-E])H(\d+(\.\d+)?)$/)) {
+      rows.push({ token: tok, meaning: 'wrench-hole, horizontal through, position ' + m[1] + ' at ' + m[2] + ' mm from left end (absolute)' });
       continue;
     }
-    if (m = tok.match(/^([A-E])V(\d+)$/)) {
-      rows.push({ token: tok, meaning: 'wrench-hole, vertical through, position ' + m[1] + ' at ' + m[2] + ' mm from left end' });
+    if (m = tok.match(/^([A-E])V(\d+(\.\d+)?)$/)) {
+      rows.push({ token: tok, meaning: 'wrench-hole, vertical through, position ' + m[1] + ' at ' + m[2] + ' mm from left end (absolute)' });
       continue;
     }
     if (m = tok.match(/^([LR])(DH|DV|SH|SV|MH|MV)$/)) {
@@ -1034,9 +1067,15 @@ function explainJlcmc(partStr) {
     if (/^(LK|RK|LM|RM)$/.test(tok)) {
       rows.push({ token: tok, meaning: 'wrench-hole — ' + FACE_NAME[tok] + ' face' });
       i++;
-      while (i < parsed.alts.length && /^[A-E]\d+$/.test(parsed.alts[i])) {
+      let cumulative = 0;
+      while (i < parsed.alts.length && /^[A-E]\d+(\.\d+)?$/.test(parsed.alts[i])) {
         const t = parsed.alts[i];
-        rows.push({ token: t, meaning: '  ↳ position ' + t[0] + ' at ' + t.slice(1) + ' mm from left end' });
+        const v = parseFloat(t.slice(1));
+        cumulative += v;
+        const detail = (t[0] === 'A')
+          ? '  ↳ position A at ' + v + ' mm from left end'
+          : '  ↳ position ' + t[0] + ' — +' + v + ' mm from previous hole (cumulative: ' + cumulative + ' mm from left end)';
+        rows.push({ token: t, meaning: detail });
         i++;
       }
       continue;
@@ -1044,16 +1083,20 @@ function explainJlcmc(partStr) {
     if (/^(LC|RC|LE|RE)$/.test(tok)) {
       rows.push({ token: tok, meaning: 'counterbore — ' + FACE_NAME[tok] + ' face' });
       i++;
-      // Z size
       let m;
       if (i < parsed.alts.length && (m = parsed.alts[i].match(/^Z(\d+)$/))) {
         rows.push({ token: parsed.alts[i], meaning: '  ↳ size — ' + (COUNTERBORE_Z[m[1]] || ('Z' + m[1])) });
         i++;
       }
-      // positions
-      while (i < parsed.alts.length && /^[A-E]\d+$/.test(parsed.alts[i])) {
+      let cumulative = 0;
+      while (i < parsed.alts.length && /^[A-E]\d+(\.\d+)?$/.test(parsed.alts[i])) {
         const t = parsed.alts[i];
-        rows.push({ token: t, meaning: '  ↳ position ' + t[0] + ' at ' + t.slice(1) + ' mm from left end' });
+        const v = parseFloat(t.slice(1));
+        cumulative += v;
+        const detail = (t[0] === 'A')
+          ? '  ↳ position A at ' + v + ' mm from left end'
+          : '  ↳ position ' + t[0] + ' — +' + v + ' mm from previous hole (cumulative: ' + cumulative + ' mm from left end)';
+        rows.push({ token: t, meaning: detail });
         i++;
       }
       continue;
