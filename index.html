@@ -261,8 +261,8 @@
 </head>
 <body>
 <header>
-  <h1>MISUMI ↔ JLCMC 30-Series Translator</h1>
-  <p>30 mm base aluminum extrusion. Convert MISUMI HFS6 part numbers ↔ JLCMC TXCK Euro Standard 30 part numbers.</p>
+  <h1>MISUMI ↔ JLCMC T-Slot Translator</h1>
+  <p>Convert between MISUMI and JLCMC part numbers for both <strong>20-series</strong> (MISUMI HFS5 ↔ JLCMC TXCJ) and <strong>30-series</strong> (MISUMI HFS6 ↔ JLCMC TXCK) aluminum extrusion. Series is auto-detected from the part number.</p>
   <div class="disclaimer">
     <strong>No warranty. Verify before you order.</strong>
     This tool is provided as-is for reference only. Translations are heuristic and the underlying catalogs evolve — the author is <strong>not responsible</strong> if this gives wrong answers and you end up with the wrong parts. <strong>Double-check every translation</strong> against the current MISUMI and JLCMC catalogs (including drawings, dimensions, tap depths, and face/orientation conventions) before placing any order.
@@ -279,7 +279,7 @@
     </div>
 
     <input id="input" type="text" autocomplete="off" spellcheck="false"
-      placeholder="e.g. HFS6-3030-1000-LTP-RTP"
+      placeholder="e.g. HFS6-3030-1000-LTP-RTP or HFS5-2020-500"
       oninput="doTranslate()" />
 
     <div class="examples" id="examples"></div>
@@ -294,12 +294,17 @@
   <details>
     <summary>Format reference</summary>
     <h4>MISUMI</h4>
-    <p><code>{family}{6}-{section}-{lengthMM}[-{alt}…]</code> — e.g. <code>HFS6-3030-1000-LTP-RTP</code></p>
-    <p>Prefixes recognised: <code>HFS, HFSB, HFSL, HFSLB, HFSF, HFSFB, HFSLF, HFST, HFSTB, HFSLT, HFSH, HFSC, HFSR, HFSG, HFSP, GFS, GFSP, HFSY, HFSYB, CAF, EFS, NFS, NEFS, HFSMG</code>. Optional leading <code>K</code> (fixed-length stock) is dropped.</p>
+    <p><code>{family}{5 or 6}-{section}-{lengthMM}[-{alt}…]</code> — e.g. <code>HFS6-3030-1000-LTP-RTP</code> or <code>HFS5-2020-500-LTP</code></p>
+    <p><strong>5-series prefixes:</strong> <code>HFS, HFSB, HFSF, HFSFB, HFST, HFSTB, HFSH, HFSC, HFSR, HFSY, NFS, NFSB, NFSF, NFST, CAF</code>.</p>
+    <p><strong>6-series prefixes:</strong> <code>HFS, HFSB, HFSL, HFSLB, HFSF, HFSFB, HFSLF, HFST, HFSTB, HFSLT, HFSH, HFSC, HFSR, HFSG, HFSP, GFS, GFSP, HFSY, HFSYB, CAF, EFS, NFS, NEFS, HFSMG</code>.</p>
+    <p>Optional leading <code>K</code> (fixed-length stock) is dropped.</p>
 
     <h4>JLCMC</h4>
-    <p><code>TXCK-{H6|H7}-{spec}-L{lengthMM}[-{alt}…]</code> — e.g. <code>TXCK-H6-3030-L1000-LA-RA</code></p>
-    <p>Spec codes seen: <code>3030, 3030A, 3030B, 3030C, 3030G, 3030H, 3030T, 3030R, 3030RS, 3045M, 3060, 3060A, 3060B, 3060G, 3090, 30120, 30150, 5050S, 6060, 6630, 6630R</code> with optional <code>J</code> prefix for Lightweight tier (<code>J3030</code>, <code>J6060</code>, <code>J6060S</code>, <code>J6630R</code>, <code>J6630RA</code>…).</p>
+    <p><code>TXCJ-{surface}-{spec}-L{lengthMM}</code> for 20-series, <code>TXCK-{surface}-{spec}-L{lengthMM}</code> for 30-series.</p>
+    <p><strong>20-series (TXCJ) surfaces:</strong> <code>H6</code> natural, <code>H7</code> black, <code>W1</code> white painted, <code>B2</code> wood color.</p>
+    <p><strong>20-series specs:</strong> <code>2020, 2020A, 2020B, 2020C, 2020D, 2020E, 2020H, 2020R, 2040, 2040A, 2040C, 2040H, 2060, 2080, 2525, 2550, 4060S, 4080S, 4420, 4420R</code>.</p>
+    <p><strong>30-series (TXCK) surfaces:</strong> <code>H6</code> natural, <code>H7</code> black.</p>
+    <p><strong>30-series specs:</strong> <code>3030, 3030A, 3030B, 3030C, 3030G, 3030H, 3030T, 3030R, 3030RS, 3045M, 3060, 3060A, 3060B, 3060G, 3090, 30120, 30150, 5050S, 6060, 6630, 6630R</code> with optional <code>J</code> prefix for Lightweight tier (<code>J3030, J3060, J3090, J6060…</code>).</p>
   </details>
 
   <details>
@@ -328,16 +333,20 @@
   <details>
     <summary>Important caveats (always relevant)</summary>
     <ul>
-      <li><strong>M8 end-tap depth:</strong> MISUMI 24 mm vs JLCMC 20 mm. Blind-joint bolts sized to MISUMI engagement may be too long for JLCMC's stock tap depth — spec the deeper tap by note or shorten the bolt.</li>
-      <li><strong>Slot width:</strong> MISUMI 8 mm nominal vs JLCMC 8.2/8.3 mm. M6 T-nuts cross-fit, but tight hammer nuts may feel loose.</li>
-      <li><strong>JLCMC RS radius (R30)</strong> ≠ MISUMI R (R25). Mind the visible corner clearance.</li>
+      <li><strong>End-tap depth, 6-series:</strong> MISUMI M8×24 vs JLCMC M8×20. Blind-joint bolts sized to MISUMI engagement may be too long for JLCMC's stock tap depth — spec the deeper tap by note or shorten the bolt.</li>
+      <li><strong>End-tap depth, 5-series:</strong> MISUMI M5×15 vs JLCMC M5×12. Same caveat at smaller scale. For 25-mm-side sections (2525/2550) MISUMI uses M8×24 vs JLCMC M8×20.</li>
+      <li><strong>Slot width, 6-series:</strong> MISUMI 8 mm nominal vs JLCMC 8.2/8.3 mm. M6 T-nuts cross-fit, but tight hammer nuts may feel loose.</li>
+      <li><strong>Slot width, 5-series:</strong> Both 6 mm slot — M5 hardware cross-fits cleanly.</li>
+      <li><strong>JLCMC 30-series RS radius (R30)</strong> ≠ MISUMI HFSR6 (R25). 5-series corner radii are smaller (HFSR5 ≈ R10) — verify JLCMC 2020R against the drawing.</li>
       <li><strong>Cut tolerance:</strong> JLCMC default ±0.3 mm (L≤1000) is tighter than MISUMI's ±0.5 mm — no alteration needed.</li>
-      <li><strong>Material:</strong> JLCMC = A6063-T5 throughout. MISUMI <code>GFS6</code> = 6061-T6 (no JLCMC equivalent).</li>
+      <li><strong>Material:</strong> JLCMC = A6063-T5 throughout. MISUMI HFS5 = A6N01SS-T5 / 6005A-T5; MISUMI NFS5 / HFS6 = 6063 family; <code>GFS6</code> = 6061-T6 (no JLCMC equivalent).</li>
+      <li><strong>JLCMC 20-series exclusive finishes:</strong> W1 (white painted) and B2 (wood color) — no MISUMI equivalent.</li>
+      <li><strong>MISUMI 20-series HFST shape (T = 2-slot + 2-flat):</strong> JLCMC 20-series catalog does not list a T variant — translator falls back to the bare section and flags the gap.</li>
     </ul>
   </details>
 
   <footer>
-    Built for 30-series only. Verify all critical translations against vendor drawings before ordering.
+    Covers 20-series and 30-series. Verify all critical translations against vendor drawings before ordering.
   </footer>
 </main>
 
@@ -346,48 +355,124 @@
 // Data tables
 // ============================================================================
 
-// MISUMI family prefix → {jlcmcSurface, tier, shapeLetter, warn, noJlcmcMap}
+// Series-level configuration: JLCMC category code, MISUMI tap depths, valid sections.
+const SERIES_CONFIG = {
+  '5': {
+    jlcmcCat: 'TXCJ',
+    base: '20 mm',
+    slot: '6 mm',
+    // For end-tap LTP/RTP/TPW: standard MISUMI depth vs JLCMC depth.
+    tapMisumi: 'M5×15',
+    tapJlcmc:  'M5×12',
+    tapMisumiBig: 'M8×24 (25 mm sides only)',
+    tapJlcmcBig:  'M8×20',
+    validSections: { '2020':1, '2040':1, '2060':1, '2080':1, '2525':1, '2550':1, '4060':1, '4080':1 },
+    cbSizeOK: { '5':1, '6':1 },           // counterbore sizes that natively exist in this series
+    cbSizeWarn: { '8':'5-series 6 mm slot rarely uses Z8 (M8 cap) — confirm.', '12':'Z12 not used in 5-series.' },
+    lightOK: false,                       // no Lightweight tier in 5-series
+  },
+  '6': {
+    jlcmcCat: 'TXCK',
+    base: '30 mm',
+    slot: '8 mm',
+    tapMisumi: 'M8×24',
+    tapJlcmc:  'M8×20',
+    validSections: { '3030':1, '3060':1, '3090':1, '30120':1, '30150':1, '5050':1, '6060':1 },
+    cbSizeOK: { '6':1, '8':1 },
+    cbSizeWarn: { '5':'JLCMC Z5 (M5 cap) has no MISUMI 6-series equivalent — closest Z6.',
+                  '12':'JLCMC Z12 (10.2 slot heavy) has no MISUMI 6-series equivalent — closest Z8.' },
+    lightOK: true,
+    jlcmcLightSections: new Set(['3030', '3060', '3090', '6060']),
+  },
+};
+
+// MISUMI family prefix → {jlcmcSurface, tier, shapeLetter, warn, noJlcmcMap, series}
+// Series '6' = 6-series (30 mm base). Series '5' = 5-series (20 mm base).
+// Some prefixes (HFS, HFSB, HFSF, HFST, HFSH, HFSC, HFSR, NFS, NFSB, CAF) appear in BOTH series — they
+// dispatch on the trailing digit. We key the table by prefix and validate the series at parse time.
 const MISUMI_FAMILY = {
-  'HFS':   { surface: 'H6', tier: 'std',   shape: ''  },
-  'HFSB':  { surface: 'H7', tier: 'std',   shape: ''  },
-  'HFSL':  { surface: 'H6', tier: 'light', shape: ''  },
-  'HFSLB': { surface: 'H7', tier: 'light', shape: ''  },
-  'HFSF':  { surface: 'H6', tier: 'std',   shape: 'A' },
-  'HFSFB': { surface: 'H7', tier: 'std',   shape: 'A' },
-  'HFSLF': { surface: 'H6', tier: 'light', shape: 'A' },
-  'HFST':  { surface: 'H6', tier: 'std',   shape: 'T' },
-  'HFSTB': { surface: 'H7', tier: 'std',   shape: 'T' },
-  'HFSLT': { surface: 'H6', tier: 'light', shape: 'T' },
-  'HFSH':  { surface: 'H6', tier: 'std',   shape: 'H' },
-  'HFSC':  { surface: 'H6', tier: 'std',   shape: 'C' },
-  'HFSR':  { surface: 'H6', tier: 'std',   shape: 'R',
-            warn: 'MISUMI HFSR6 = R25 corner radius. JLCMC R suffix = R25 (matches); RS = R30 (different).' },
-  'HFSG':  { surface: 'H6', tier: 'heavy', shape: '' },
-  'HFSP':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+  // Shared between 5 and 6 series
+  'HFS':   { surface: 'H6', tier: 'std',   shape: '',  series: ['5','6'] },
+  'HFSB':  { surface: 'H7', tier: 'std',   shape: '',  series: ['5','6'] },
+  'HFSF':  { surface: 'H6', tier: 'std',   shape: 'A', series: ['5','6'] },
+  'HFSFB': { surface: 'H7', tier: 'std',   shape: 'A', series: ['5','6'] },
+  'HFST':  { surface: 'H6', tier: 'std',   shape: 'T', series: ['5','6'] },
+  'HFSTB': { surface: 'H7', tier: 'std',   shape: 'T', series: ['5','6'] },
+  'HFSH':  { surface: 'H6', tier: 'std',   shape: 'H', series: ['5','6'] },
+  'HFSC':  { surface: 'H6', tier: 'std',   shape: 'C', series: ['5','6'] },
+  'HFSR':  { surface: 'H6', tier: 'std',   shape: 'R', series: ['5','6'],
+            warn: '6-series HFSR = R25 corner; JLCMC R = R25 / RS = R30. 5-series HFSR = R10. Confirm radius against drawing.' },
+  'NFS':   { surface: 'H6', tier: 'econ',  shape: '',  series: ['5','6'], noJlcmc: true,
+            warn: 'NFS = 6063-T5 economy / no-finish variant. JLCMC closest is H6 (which is also 6063-T5).' },
+  'NFSB':  { surface: 'H7', tier: 'econ',  shape: '',  series: ['5','6'], noJlcmc: true,
+            warn: 'NFSB = economy black. JLCMC closest is H7.' },
+  'NFSF':  { surface: 'H6', tier: 'econ',  shape: 'A', series: ['5','6'], noJlcmc: true,
+            warn: 'NFSF = economy 3-slot+1-flat. JLCMC closest is H6 with A suffix.' },
+  'NFST':  { surface: 'H6', tier: 'econ',  shape: 'T', series: ['5','6'], noJlcmc: true,
+            warn: 'NFST = economy T-shape.' },
+  'CAF':   { surface: 'H6', tier: 'std',   shape: '',  series: ['5','6'], noJlcmc: true,
+            warn: 'CAF = clear coating over anodize. JLCMC has no equivalent — closest is H6.' },
+  'HFSY':  { surface: 'H6', tier: 'std',   shape: '',  series: ['5','6'], noJlcmc: true,
+            warn: 'HFSY = yellow baked-on finish. JLCMC offers H6 (natural) / H7 (black) / W1 (white, 20-series only) / B2 (wood, 20-series only).' },
+
+  // 6-series only
+  'HFSL':  { surface: 'H6', tier: 'light', shape: '',  series: ['6'] },
+  'HFSLB': { surface: 'H7', tier: 'light', shape: '',  series: ['6'] },
+  'HFSLF': { surface: 'H6', tier: 'light', shape: 'A', series: ['6'] },
+  'HFSLT': { surface: 'H6', tier: 'light', shape: 'T', series: ['6'] },
+  'HFSG':  { surface: 'H6', tier: 'heavy', shape: '',  series: ['6'] },
+  'HFSP':  { surface: 'H6', tier: 'std',   shape: '',  series: ['6'], noJlcmc: true,
             warn: 'HFSP6 = parallel-milled (linear-guide ready). JLCMC has no equivalent.' },
-  'GFSP':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+  'GFSP':  { surface: 'H6', tier: 'std',   shape: '',  series: ['6'], noJlcmc: true,
             warn: 'GFSP6 = parallel-milled + 6061-T6. JLCMC has no equivalent.' },
-  'GFS':   { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+  'GFS':   { surface: 'H6', tier: 'std',   shape: '',  series: ['6'], noJlcmc: true,
             warn: 'GFS6 = 6061-T6 high-rigidity alloy. JLCMC uses A6063-T5 throughout — material substitution required.' },
-  'HFSY':  { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
-            warn: 'HFSY6 = yellow baked-on finish. JLCMC offers only H6 (natural) or H7 (black).' },
-  'HFSYB': { surface: 'H7', tier: 'std',   shape: '', noJlcmc: true,
-            warn: 'HFSYB6 = yellow + black. JLCMC offers only H6 or H7.' },
-  'CAF':   { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
-            warn: 'CAF6 = clear coating. JLCMC has no equivalent — closest is H6.' },
-  'EFS':   { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
+  'HFSYB': { surface: 'H7', tier: 'std',   shape: '',  series: ['6'], noJlcmc: true,
+            warn: 'HFSYB6 = yellow + black. JLCMC offers only H6 / H7.' },
+  'EFS':   { surface: 'H6', tier: 'econ',  shape: '',  series: ['6'], noJlcmc: true,
             warn: 'EFS6 = economy variant. JLCMC closest is H6.' },
-  'NFS':   { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
-            warn: 'NFS6 = no-finish economy. JLCMC closest is H6.' },
-  'NEFS':  { surface: 'H6', tier: 'econ',  shape: '', noJlcmc: true,
+  'NEFS':  { surface: 'H6', tier: 'econ',  shape: '',  series: ['6'], noJlcmc: true,
             warn: 'NEFS6 = no-finish economy. JLCMC closest is H6.' },
-  'HFSMG': { surface: 'H6', tier: 'std',   shape: '', noJlcmc: true,
+  'HFSMG': { surface: 'H6', tier: 'std',   shape: '',  series: ['6'], noJlcmc: true,
             warn: 'HFSMG6 = factory-bent / curved frames. JLCMC has no bending service.' },
 };
 
-// JLCMC section spec (just the number/shape token after the J or not) → MISUMI section + shape suffix
-// Key is what appears after a J or directly, e.g. "3030", "3030A", "3045M", "6630R"
-const JLCMC_SPEC = {
+// JLCMC 20-series (TXCJ) specs.
+// Key: the spec string after the surface code (e.g. "2020", "2020A").
+// .section = MISUMI section number; .shape = MISUMI shape suffix to use.
+const JLCMC_SPEC_5 = {
+  '2020':  { section: '2020', shape: '' },
+  '2020A': { section: '2020', shape: 'F' },                                    // 3-slot + 1 flat (assumed)
+  '2020B': { section: '2020', shape: '', noMisumi: true,
+             warn: 'JLCMC 2020B is a JLCMC-specific 20×20 variant — no direct MISUMI equivalent. Verify drawing.' },
+  '2020C': { section: '2020', shape: 'C' },                                    // 1-slot + 3 flats (assumed)
+  '2020D': { section: '2020', shape: '', noMisumi: true,
+             warn: 'JLCMC 2020D is a JLCMC-specific 20×20 variant — no direct MISUMI equivalent.' },
+  '2020E': { section: '2020', shape: '', noMisumi: true,
+             warn: 'JLCMC 2020E is a JLCMC-specific 20×20 variant — no direct MISUMI equivalent.' },
+  '2020H': { section: '2020', shape: 'H' },                                    // opposite slots (assumed)
+  '2020R': { section: '2020', shape: 'R',
+             warn: '5-series corner radius: MISUMI HFSR5-2020 ≈ R10. Verify JLCMC 2020R radius dimension.' },
+  '2040':  { section: '2040', shape: '' },
+  '2040A': { section: '2040', shape: 'F' },
+  '2040C': { section: '2040', shape: 'C' },
+  '2040H': { section: '2040', shape: 'H' },
+  '2060':  { section: '2060', shape: '' },
+  '2080':  { section: '2080', shape: '' },
+  '2525':  { section: '2525', shape: '' },                                     // M8 tap territory
+  '2550':  { section: '2550', shape: '' },
+  '4060S': { section: '4060', shape: '',
+             warn: 'JLCMC 4060S has internal cross-bracing. MISUMI HFS5-4060 is a simpler web — verify against drawing.' },
+  '4080S': { section: '4080', shape: '',
+             warn: 'JLCMC 4080S has internal cross-bracing. MISUMI HFS5-4080 differs — verify drawing.' },
+  '4420':  { section: '4420', shape: '', noMisumi: true,
+             warn: 'JLCMC 4420 is a 20-series-specific section — no MISUMI equivalent.' },
+  '4420R': { section: '4420R', shape: '', noMisumi: true,
+             warn: 'JLCMC 4420R is a 20-series-specific radius section — no MISUMI equivalent.' },
+};
+
+// JLCMC 30-series (TXCK) specs — original table, renamed for clarity.
+const JLCMC_SPEC_6 = {
   '3030':   { section: '3030',   shape: '',  noMisumi: false },
   '3030A':  { section: '3030',   shape: 'F', noMisumi: false },
   '3030B':  { section: '3030',   shape: '',  noMisumi: true,
@@ -425,16 +510,25 @@ const JLCMC_SPEC = {
               warn: 'JLCMC 6630RA (60×60 with two rounded quarters) has no MISUMI single-extrusion equivalent.' },
 };
 
-// MISUMI alteration parsers: { match: regex, toJ: fn(matchgroups), notes: string }
+// Series-aware end-tap depth note. 5-series uses M5 / M8 (for 25 mm sides); 6-series uses M8.
+function tapNote(series, section, both) {
+  const cfg = SERIES_CONFIG[series];
+  let mi = cfg.tapMisumi, jc = cfg.tapJlcmc;
+  // For 5-series 25-mm sections (2525, 2550), MISUMI specifies M8 end tap.
+  if (series === '5' && (section === '2525' || section === '2550')) {
+    mi = cfg.tapMisumiBig; jc = cfg.tapJlcmcBig;
+  }
+  return 'End-tap depth: MISUMI ' + mi + ' → JLCMC ' + jc + (both ? ' (both ends).' : '.') + ' Verify Blind-Joint bolt length.';
+}
+
+// MISUMI alteration parsers: { match: regex, toJ: fn(matchgroups, ctx), notes: string }
+// ctx = { series, section } supplied by translator dispatcher.
 // Each handler returns { code, note }
 const MISUMI_ALT_HANDLERS = [
   // End tapping
-  { re: /^LTP$/, toJ: () => ({ code: 'LA',
-      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20. Verify Blind-Joint bolt length.' }) },
-  { re: /^RTP$/, toJ: () => ({ code: 'RA',
-      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20. Verify bolt length.' }) },
-  { re: /^TPW$/, toJ: () => ({ code: 'DA',
-      note: 'End-tap depth: MISUMI M8×24 → JLCMC M8×20 (both ends). Verify bolt length.' }) },
+  { re: /^LTP$/, toJ: (_, c) => ({ code: 'LA', note: tapNote(c.series, c.section, false) }) },
+  { re: /^RTP$/, toJ: (_, c) => ({ code: 'RA', note: tapNote(c.series, c.section, false) }) },
+  { re: /^TPW$/, toJ: (_, c) => ({ code: 'DA', note: tapNote(c.series, c.section, true)  }) },
   // Heli-coil tap (no JLCMC equivalent)
   { re: /^L?HP$|^RHP$|^HPW$/, toJ: m => ({ code: null,
       note: 'Heli-coil end tap (' + m[0] + ') has no JLCMC equivalent. Specify by drawing note if needed.', err: true }) },
@@ -496,14 +590,20 @@ const MISUMI_ALT_HANDLERS = [
       note: m[0] + ' (end-cap clearance shift on wrench hole) has no JLCMC code — specify by note.', err: true }) },
 ];
 
+function tapNoteJtoM(series, section, both) {
+  const cfg = SERIES_CONFIG[series];
+  let mi = cfg.tapMisumi, jc = cfg.tapJlcmc;
+  if (series === '5' && (section === '2525' || section === '2550')) {
+    mi = cfg.tapMisumiBig; jc = cfg.tapJlcmcBig;
+  }
+  return 'End-tap depth: JLCMC ' + jc + ' → MISUMI ' + mi + (both ? ' (both ends).' : '.') + ' Verify bolt length.';
+}
+
 // JLCMC alteration parsers
 const JLCMC_ALT_HANDLERS = [
-  { re: /^LA$/, toM: () => ({ code: 'LTP',
-      note: 'End-tap depth: JLCMC M8×20 → MISUMI M8×24. Verify bolt length.' }) },
-  { re: /^RA$/, toM: () => ({ code: 'RTP',
-      note: 'End-tap depth: JLCMC M8×20 → MISUMI M8×24. Verify bolt length.' }) },
-  { re: /^DA$/, toM: () => ({ code: 'TPW',
-      note: 'End-tap both ends. Depth: JLCMC M8×20 → MISUMI M8×24.' }) },
+  { re: /^LA$/, toM: (_, c) => ({ code: 'LTP', note: tapNoteJtoM(c.series, c.section, false) }) },
+  { re: /^RA$/, toM: (_, c) => ({ code: 'RTP', note: tapNoteJtoM(c.series, c.section, false) }) },
+  { re: /^DA$/, toM: (_, c) => ({ code: 'TPW', note: tapNoteJtoM(c.series, c.section, true)  }) },
   // 45° cuts
   { re: /^LD$/, toM: () => ({ code: 'LAT45' }) },
   { re: /^LU$/, toM: () => ({ code: 'LCT45' }) },
@@ -538,27 +638,33 @@ const JLCMC_ALT_HANDLERS = [
 
 function parseMisumi(input) {
   const tokens = input.toUpperCase().trim().split(/-+/).filter(Boolean);
-  if (tokens.length < 3) return { err: 'Need at least family-section-length tokens (e.g. HFS6-3030-1000).' };
+  if (tokens.length < 3) return { err: 'Need at least family-section-length tokens (e.g. HFS6-3030-1000 or HFS5-2020-500).' };
 
   let first = tokens[0];
   if (first.startsWith('K')) first = first.slice(1); // strip stock-cut K
 
-  // Match prefix + 6
-  const m = first.match(/^([A-Z]+)(6)$/);
-  if (!m) return { err: 'Could not parse family prefix from "' + tokens[0] + '". Expected e.g. HFS6, HFSB6, HFSL6.' };
+  // Match prefix + 5 or 6
+  const m = first.match(/^([A-Z]+)([56])$/);
+  if (!m) return { err: 'Could not parse family + series from "' + tokens[0] + '". Expected e.g. HFS5, HFS6, HFSB5, HFSB6, HFSL6.' };
 
   const prefix = m[1];
-  if (!MISUMI_FAMILY[prefix]) return { err: 'Unknown family prefix "' + prefix + '". See format reference.' };
+  const series = m[2];
+  const fi = MISUMI_FAMILY[prefix];
+  if (!fi) return { err: 'Unknown family prefix "' + prefix + '". See format reference.' };
+  if (!fi.series.includes(series)) {
+    return { err: 'Family "' + prefix + '" is not catalogued for series ' + series + '. Available: ' + fi.series.map(s=>prefix+s).join(', ') + '.' };
+  }
 
   const section = tokens[1];
-  if (!/^\d+$/.test(section)) return { err: 'Section "' + section + '" must be numeric (e.g. 3030, 3060).' };
+  if (!/^\d+$/.test(section)) return { err: 'Section "' + section + '" must be numeric (e.g. 2020, 3030).' };
 
   const length = tokens[2];
   if (!/^\d+(\.\d+)?$/.test(length)) return { err: 'Length "' + length + '" must be numeric (mm).' };
 
   return {
     family: prefix,
-    familyInfo: MISUMI_FAMILY[prefix],
+    familyInfo: fi,
+    series,
     section,
     length: parseFloat(length),
     alts: tokens.slice(3),
@@ -567,32 +673,41 @@ function parseMisumi(input) {
 
 function parseJlcmc(input) {
   const tokens = input.toUpperCase().trim().split(/-+/).filter(Boolean);
-  if (tokens.length < 4) return { err: 'Need at least TXCK-{H6|H7}-{spec}-L{len} tokens.' };
-  if (tokens[0] !== 'TXCK') return { err: 'JLCMC part numbers start with TXCK.' };
+  if (tokens.length < 4) return { err: 'Need at least TXCK/TXCJ-{surface}-{spec}-L{len} tokens.' };
+  const cat = tokens[0];
+  let series, specTable, validSurfaces;
+  if (cat === 'TXCK')      { series = '6'; specTable = JLCMC_SPEC_6; validSurfaces = ['H6', 'H7']; }
+  else if (cat === 'TXCJ') { series = '5'; specTable = JLCMC_SPEC_5; validSurfaces = ['H6', 'H7', 'W1', 'B2']; }
+  else return { err: 'JLCMC part numbers start with TXCK (30-series) or TXCJ (20-series). Got "' + cat + '".' };
+
   const surface = tokens[1];
-  if (surface !== 'H6' && surface !== 'H7') return { err: 'Surface code must be H6 or H7, got "' + surface + '".' };
+  if (!validSurfaces.includes(surface)) return { err: 'Surface code for ' + cat + ' must be one of ' + validSurfaces.join('/') + ', got "' + surface + '".' };
 
   let spec = tokens[2];
   let tier = 'std';
-  if (spec.startsWith('J')) { tier = 'light'; spec = spec.slice(1); }
-  if (!JLCMC_SPEC[spec]) return { err: 'Unknown JLCMC spec "' + tokens[2] + '". See format reference.' };
+  // J prefix on spec = Lightweight tier (6-series only)
+  if (series === '6' && spec.startsWith('J')) { tier = 'light'; spec = spec.slice(1); }
+  if (!specTable[spec]) return { err: 'Unknown JLCMC ' + (series==='5'?'20':'30') + '-series spec "' + tokens[2] + '". See format reference.' };
 
   const lenTok = tokens[3];
   if (!/^L\d+(\.\d+)?$/.test(lenTok)) return { err: 'Length token must be L###, e.g. L1000.' };
 
   return {
+    cat,
+    series,
     surface,
     tier,
     spec,
-    specInfo: JLCMC_SPEC[spec],
+    specInfo: specTable[spec],
     length: parseFloat(lenTok.slice(1)),
     alts: tokens.slice(4),
   };
 }
 
 // Translate MISUMI alteration tokens → JLCMC string + notes
+// ctx = { series, section } so per-series notes (tap depths, counterbore sizes) can be generated.
 // Handles deferred counterbore Z+X pairing & wrench/counterbore position chains
-function translateAltsMtoJ(alts) {
+function translateAltsMtoJ(alts, ctx) {
   const notes = [];
   const out = [];
   const deferred = []; // {kind:'Z',size} and {kind:'X',side,pos}
@@ -602,7 +717,7 @@ function translateAltsMtoJ(alts) {
     for (const h of MISUMI_ALT_HANDLERS) {
       const m = tok.match(h.re);
       if (m) {
-        const r = h.toJ(m);
+        const r = h.toJ(m, ctx);
         if (r.defer) { deferred.push(r.defer); handled = true; break; }
         if (r.code) out.push(r.code);
         if (r.note) notes.push({ text: r.note, err: !!r.err });
@@ -696,8 +811,9 @@ function translateAltsMtoJ(alts) {
 }
 
 // Translate JLCMC alteration tokens → MISUMI string + notes
+// ctx = { series, section } so per-series notes (tap depths, counterbore sizes) can be generated.
 // Has to recognise multi-token sequences like "LK-A100" (wrench hole) and "LC-Z6-A100" (counterbore)
-function translateAltsJtoM(alts) {
+function translateAltsJtoM(alts, ctx) {
   const notes = [];
   const out = [];
   let i = 0;
@@ -741,10 +857,16 @@ function translateAltsJtoM(alts) {
       }
       if (!zSize) notes.push({ text: face + ' counterbore present but no Z size — translation incomplete.', err: true });
       if (!incr.length) notes.push({ text: face + ' counterbore present but no A### position.', err: true });
-      if (zSize === '5' || zSize === '12') {
-        notes.push({ text: 'JLCMC Z' + zSize + ' counterbore size has no MISUMI 6-series equivalent. Closest: Z6.', err: true });
+      const sCfg = SERIES_CONFIG[ctx.series];
+      if (zSize && sCfg.cbSizeWarn[zSize]) {
+        notes.push({ text: 'Z' + zSize + ': ' + sCfg.cbSizeWarn[zSize], err: true });
       }
-      const safeZ = (zSize === '5' || zSize === '12') ? '6' : (zSize || '?');
+      // Choose a fallback safe Z that exists in the destination series, if the requested one doesn't.
+      let safeZ = zSize || '?';
+      if (zSize && !sCfg.cbSizeOK[zSize]) {
+        const fallback = Object.keys(sCfg.cbSizeOK)[0];
+        safeZ = fallback;
+      }
       // Default MISUMI face letter — emit as X. User adjusts if needed (MISUMI face is orientation-implied).
       const xLetter = 'X';
       if (incr.length) {
@@ -767,7 +889,7 @@ function translateAltsJtoM(alts) {
     for (const h of JLCMC_ALT_HANDLERS) {
       const m = tok.match(h.re);
       if (m) {
-        const r = h.toM(m);
+        const r = h.toM(m, ctx);
         if (r.code) out.push(r.code);
         if (r.note) notes.push({ text: r.note, err: !!r.err });
         handled = true;
@@ -786,43 +908,53 @@ function misumiToJlcmc(input) {
   const parsed = parseMisumi(input);
   if (parsed.err) return { err: parsed.err };
   const fi = parsed.familyInfo;
+  const cfg = SERIES_CONFIG[parsed.series];
   const notes = [];
 
   if (fi.warn) notes.push({ text: fi.warn, err: !!fi.noJlcmc });
 
   // Section → JLCMC spec
-  const validSections = { '3030':1, '3060':1, '3090':1, '30120':1, '30150':1, '5050':1, '6060':1 };
   let jlcmcSpec = null;
-  if (parsed.section === '5050') jlcmcSpec = '5050S';
-  else if (validSections[parsed.section]) jlcmcSpec = parsed.section + fi.shape;
+  if (parsed.series === '6' && parsed.section === '5050') jlcmcSpec = '5050S';
+  else if (cfg.validSections[parsed.section]) jlcmcSpec = parsed.section + fi.shape;
   else {
-    return { err: 'MISUMI section ' + parsed.section + ' has no direct JLCMC 30-series equivalent. JLCMC catalog covers 3030, 3060, 3090, 30120, 30150, 5050, 6060.' };
+    const seriesName = parsed.series === '5' ? '20-series' : '30-series';
+    return { err: 'MISUMI section ' + parsed.section + ' has no direct JLCMC ' + seriesName + ' equivalent. Available: ' + Object.keys(cfg.validSections).join(', ') + '.' };
+  }
+
+  // Validate shape is available in the JLCMC table for this spec (avoid producing 2020T if no such thing).
+  const specTable = parsed.series === '5' ? JLCMC_SPEC_5 : JLCMC_SPEC_6;
+  if (!specTable[jlcmcSpec]) {
+    notes.push({ text: 'JLCMC does not list spec "' + jlcmcSpec + '" in the ' + (parsed.series==='5'?'20':'30') + '-series catalog. ' +
+                       'Closest base: ' + parsed.section + '. Verify whether your MISUMI shape variant has a JLCMC equivalent.', err: true });
+    jlcmcSpec = parsed.section; // fall back to bare section
   }
 
   let specToken = jlcmcSpec;
-  // JLCMC Lightweight (J) tier is only catalogued for a subset of sections.
-  const JLCMC_LIGHT_OK = new Set(['3030', '3060', '3090', '6060']);
+  // JLCMC Lightweight (J) tier is only catalogued for a subset of 6-series sections; 5-series has no J tier.
   if (fi.tier === 'light') {
-    if (JLCMC_LIGHT_OK.has(parsed.section)) {
+    if (!cfg.lightOK) {
+      notes.push({ text: 'MISUMI lightweight tier not catalogued in JLCMC ' + (parsed.series==='5'?'20':'30') + '-series — falling back to Standard. Wall thickness will differ.', err: true });
+    } else if (cfg.jlcmcLightSections && cfg.jlcmcLightSections.has(parsed.section)) {
       specToken = 'J' + specToken;
     } else {
-      notes.push({ text: 'MISUMI lightweight (' + parsed.family + '6) at section ' + parsed.section +
-                         ' has no JLCMC Lightweight equivalent — JLCMC J-tier is only available for 3030, 3060, 3090, 6060. Translation falls back to Standard tier — wall thickness will differ.', err: true });
+      notes.push({ text: 'MISUMI lightweight at section ' + parsed.section + ' has no JLCMC Lightweight equivalent — JLCMC J-tier covers ' + [...cfg.jlcmcLightSections].join(', ') + '. Falling back to Standard tier.', err: true });
     }
   }
 
-  // Length: round to 0.5 mm
-  const len = Math.round(parsed.length * 2) / 2;
-  if (len !== parsed.length) notes.push({ text: 'Length rounded to JLCMC 0.5 mm increment: ' + len + ' mm.', err: false });
+  // Length: 5-series JLCMC accepts 0.1 mm; 6-series accepts 0.5 mm.
+  const incr = parsed.series === '5' ? 10 : 2; // round factor for 0.1 / 0.5
+  const len = Math.round(parsed.length * incr) / incr;
+  if (len !== parsed.length) notes.push({ text: 'Length rounded to JLCMC ' + (parsed.series==='5'?'0.1':'0.5') + ' mm increment: ' + len + ' mm.', err: false });
 
   // Alterations
-  const altRes = translateAltsMtoJ(parsed.alts);
+  const altRes = translateAltsMtoJ(parsed.alts, { series: parsed.series, section: parsed.section });
   notes.push(...altRes.notes);
 
-  let parts = ['TXCK', fi.surface, specToken, 'L' + len];
+  let parts = [cfg.jlcmcCat, fi.surface, specToken, 'L' + len];
   if (altRes.out.length) parts = parts.concat(altRes.out);
 
-  return { result: parts.join('-'), notes, hardError: fi.noJlcmc };
+  return { result: parts.join('-'), notes, hardError: fi.noJlcmc, series: parsed.series };
 }
 
 function jlcmcToMisumi(input) {
@@ -833,36 +965,38 @@ function jlcmcToMisumi(input) {
 
   if (si.warn) notes.push({ text: si.warn, err: !!si.noMisumi });
 
-  // Build MISUMI family prefix
-  // base: HFS (clear) or HFSB (black), with optional L for lightweight tier
-  // shape letter from spec (F/T/H/C/R) goes between HFS and L
-  const shape = si.shape || ''; // F, T, H, C, R, or ''
-  let prefix;
-  if (parsed.surface === 'H6') {
-    if (parsed.tier === 'light') prefix = shape ? ('HFSL' + shape) : 'HFSL';
-    else prefix = 'HFS' + shape;
-  } else { // H7 black
-    if (parsed.tier === 'light') prefix = 'HFSLB' + shape;
-    else prefix = 'HFSB' + shape;
+  // Surface mapping: H6 → clear, H7 → black; W1 / B2 (5-series only) → no MISUMI equivalent.
+  if (parsed.surface === 'W1') {
+    notes.push({ text: 'JLCMC W1 (white painted) has no MISUMI equivalent — falling back to clear anodize (HFS).', err: true });
+  } else if (parsed.surface === 'B2') {
+    notes.push({ text: 'JLCMC B2 (wood color, painted + transfer-printed) has no MISUMI equivalent — falling back to clear anodize (HFS).', err: true });
   }
-  // Sanity: not all combos exist; warn for unusual ones
-  if (parsed.tier === 'light' && shape && !['F','T'].includes(shape)) {
-    notes.push({ text: 'Lightweight tier with shape "' + shape + '" — MISUMI offers limited HFSL combinations. Verify.', err: false });
+  const blackSurface = parsed.surface === 'H7';
+  const lightTier = parsed.tier === 'light';
+
+  // Build MISUMI family prefix.
+  const shape = si.shape || '';
+  let prefix;
+  if (lightTier) {
+    prefix = blackSurface ? ('HFSLB' + shape) : ('HFSL' + shape);
+    if (shape && !['F','T'].includes(shape)) {
+      notes.push({ text: 'Lightweight tier with shape "' + shape + '" — MISUMI offers limited HFSL combinations. Verify.', err: false });
+    }
+  } else {
+    prefix = blackSurface ? ('HFSB' + shape) : ('HFS' + shape);
   }
 
   const section = si.section;
-
-  // Length
   const len = parsed.length;
 
   // Alterations
-  const altRes = translateAltsJtoM(parsed.alts);
+  const altRes = translateAltsJtoM(parsed.alts, { series: parsed.series, section });
   notes.push(...altRes.notes);
 
-  let parts = [prefix + '6', section, String(len)];
+  let parts = [prefix + parsed.series, section, String(len)];
   if (altRes.out.length) parts = parts.concat(altRes.out);
 
-  return { result: parts.join('-'), notes, hardError: si.noMisumi };
+  return { result: parts.join('-'), notes, hardError: si.noMisumi, series: parsed.series };
 }
 
 // ============================================================================
@@ -891,18 +1025,19 @@ function explainMisumi(partStr) {
   const parsed = parseMisumi(partStr);
   if (parsed.err) return [{ token: partStr, meaning: parsed.err, unknown: true }];
   const fi = parsed.familyInfo;
+  const cfg = SERIES_CONFIG[parsed.series];
   const rows = [];
 
   const surf = fi.surface === 'H6' ? 'clear / natural anodize' :
                fi.surface === 'H7' ? 'black anodize' : '(special finish)';
   rows.push({
-    token: parsed.family + '6',
-    meaning: '6-series (30 mm base, 8 mm slot)',
+    token: parsed.family + parsed.series,
+    meaning: parsed.series + '-series (' + cfg.base + ' base, ' + cfg.slot + ' slot)',
     detail: [MISUMI_TIER_NAME[fi.tier] || fi.tier, surf, SHAPE_NAME[fi.shape] || fi.shape].filter(Boolean).join(' · '),
   });
 
-  const w = parsed.section.length === 4 ? parsed.section.slice(0,2) : parsed.section.slice(0,2);
-  const h = parsed.section.length === 4 ? parsed.section.slice(2)   : parsed.section.slice(2);
+  const w = parsed.section.slice(0,2);
+  const h = parsed.section.length >= 4 ? parsed.section.slice(2,4) : parsed.section.slice(2);
   rows.push({
     token: parsed.section,
     meaning: w + ' × ' + h + ' mm cross-section',
@@ -914,11 +1049,13 @@ function explainMisumi(partStr) {
     detail: 'tolerance ±0.5 mm (±0.2 with SC code; max 1500 mm)',
   });
 
-  // Alterations: re-run handler dispatch but capture meanings
+  // Series-specific tap depth in the meaning text (MISUMI side)
+  let mTap = cfg.tapMisumi;
+  if (parsed.series === '5' && (parsed.section === '2525' || parsed.section === '2550')) mTap = cfg.tapMisumiBig;
   const MISUMI_ALT_MEANINGS = {
-    LTP: 'tap left end face (M8 × 24 deep)',
-    RTP: 'tap right end face (M8 × 24 deep)',
-    TPW: 'tap both end faces (M8 × 24 deep each)',
+    LTP: 'tap left end face (' + mTap + ' deep)',
+    RTP: 'tap right end face (' + mTap + ' deep)',
+    TPW: 'tap both end faces (' + mTap + ' deep each)',
     LHP: 'heli-coil insert tap, left end (reduces to M5)',
     RHP: 'heli-coil insert tap, right end',
     HPW: 'heli-coil insert tap, both ends',
@@ -997,13 +1134,16 @@ function explainMisumi(partStr) {
 function explainJlcmc(partStr) {
   const parsed = parseJlcmc(partStr);
   if (parsed.err) return [{ token: partStr, meaning: parsed.err, unknown: true }];
+  const cfg = SERIES_CONFIG[parsed.series];
   const rows = [];
-  rows.push({ token: 'TXCK', meaning: 'JLCMC Euro Standard category code' });
-  rows.push({
-    token: parsed.surface,
-    meaning: parsed.surface === 'H6' ? 'natural-color sandblasting oxidation' :
-                                       'black sandblasting oxidation',
-  });
+  rows.push({ token: parsed.cat, meaning: 'JLCMC Euro Standard ' + (parsed.series==='5'?'20':'30') + '-series category code' });
+  const surfaceName = {
+    H6: 'natural-color sandblasting oxidation',
+    H7: 'black sandblasting oxidation',
+    W1: 'white painted (20-series only)',
+    B2: 'wood color, painted + transfer-printed (20-series only)',
+  }[parsed.surface] || parsed.surface;
+  rows.push({ token: parsed.surface, meaning: surfaceName });
 
   const tierStr = parsed.tier === 'light' ? 'Lightweight tier (thinner web)' : 'Standard tier';
   const si = parsed.specInfo;
@@ -1022,11 +1162,14 @@ function explainJlcmc(partStr) {
     detail: 'tolerance ±0.3 mm (L ≤ 1000) or ±0.5 mm (L > 1000); 0.5 mm increment',
   });
 
+  // Series-specific tap depth (JLCMC side)
+  let jTap = cfg.tapJlcmc;
+  if (parsed.series === '5' && (si.section === '2525' || si.section === '2550')) jTap = cfg.tapJlcmcBig;
   // Alteration tokens — walk with same logic as translator, but capture meanings.
   const JLCMC_ALT_MEANINGS = {
-    LA: 'tap left end face (M8 × 20 deep)',
-    RA: 'tap right end face (M8 × 20 deep)',
-    DA: 'tap both end faces (M8 × 20 deep each)',
+    LA: 'tap left end face (' + jTap + ' deep)',
+    RA: 'tap right end face (' + jTap + ' deep)',
+    DA: 'tap both end faces (' + jTap + ' deep each)',
     LD: 'left end 45° cut, face down',
     LU: 'left end 45° cut, face up',
     LF: 'left end 45° cut, face forward',
@@ -1114,11 +1257,12 @@ function explainJlcmc(partStr) {
 
 let direction = 'MtoJ';
 const EXAMPLES = {
-  MtoJ: ['HFS6-3030-1000', 'HFSB6-3030-1000-LTP-RTP', 'HFSL6-3060-500-LTP', 'HFSF6-3030-800-RAT45',
-         'HFS6-3030-1200-Z6-XA100-XB200', 'GFS6-3030-500', 'HFSR6-3030-400'],
-  JtoM: ['TXCK-H6-3030-L1000', 'TXCK-H7-3030-L1000-DA', 'TXCK-H6-J3030T-L800-LU',
-         'TXCK-H6-3060A-L500-LA-RA', 'TXCK-H6-3030-L1200-LC-Z6-A100-B200',
-         'TXCK-H6-3045M-L500', 'TXCK-H6-6630R-L500'],
+  MtoJ: ['HFS5-2020-500', 'HFSB5-2040-1000-LTP-RTP', 'HFS5-2020-800-AH100-BH200',
+         'HFS6-3030-1000', 'HFSB6-3060-295-TPW-Z8-YA15-YB45-YC140-YD170',
+         'HFSL6-3060-500-LTP', 'HFSR6-3030-400'],
+  JtoM: ['TXCJ-H6-2020-L500', 'TXCJ-H7-2040-L1000-DA', 'TXCJ-H6-2020H-L800-LU',
+         'TXCK-H6-3030-L1000', 'TXCK-H7-3060-L295-DA-LC-Z8-A15-B30-C95-D30',
+         'TXCK-H6-J3030T-L800-LU', 'TXCK-H6-6630R-L500'],
 };
 
 function setDirection(d) {
@@ -1126,7 +1270,7 @@ function setDirection(d) {
   document.getElementById('dirMtoJ').classList.toggle('active', d === 'MtoJ');
   document.getElementById('dirJtoM').classList.toggle('active', d === 'JtoM');
   document.getElementById('input').placeholder =
-    d === 'MtoJ' ? 'e.g. HFS6-3030-1000-LTP-RTP' : 'e.g. TXCK-H6-3030-L1000-LA-RA';
+    d === 'MtoJ' ? 'e.g. HFS6-3030-1000-LTP-RTP or HFS5-2020-500' : 'e.g. TXCK-H6-3030-L1000-LA or TXCJ-H6-2020-L500';
   renderExamples();
   doTranslate();
 }
