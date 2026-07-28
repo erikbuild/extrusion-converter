@@ -112,6 +112,41 @@ test('J→M: left-end arbitrary positions unchanged', () => {
   assert.equal(jlcmcToMisumi('TXCK-H6-3030-L800-LM-A50-B300').result, 'HFS6-3030-800-AV50-BV350');
 });
 
+test("counterbore M→J: MISUMI's catalog example — X (vertical) → LE, left-referenced", () => {
+  assert.equal(misumiToJlcmc('HFS6-3030-500-Z6-XA200-XB256').result, 'TXCK-H6-3030-L500-LE-Z6-A200-B56');
+});
+
+test('counterbore M→J: Y (horizontal) → LC', () => {
+  assert.equal(misumiToJlcmc('HFS6-3060-295-Z8-YA15-YB45').result, 'TXCK-H6-3060-L295-LC-Z8-A15-B30');
+});
+
+test('counterbore M→J: fictional Z/W face letters are rejected', () => {
+  const r = misumiToJlcmc('HFS6-3030-500-Z6-ZA100');
+  assert.ok(r.notes.some(n => n.err && n.text.includes('Unrecognised')));
+});
+
+test('counterbore J→M: LE (vertical) round-trips to X letters', () => {
+  assert.equal(jlcmcToMisumi('TXCK-H6-3030-L500-LE-Z6-A200-B56').result, 'HFS6-3030-500-Z6-XA200-XB256');
+});
+
+test('counterbore J→M: LC (horizontal) emits Y letters', () => {
+  assert.equal(jlcmcToMisumi('TXCK-H6-3030-L500-LC-Z6-A100').result, 'HFS6-3030-500-Z6-YA100');
+});
+
+test('counterbore J→M: RC positions convert from the right end', () => {
+  assert.equal(jlcmcToMisumi('TXCK-H6-3030-L800-RC-Z6-A100').result, 'HFS6-3030-800-Z6-YA700');
+});
+
+test('counterbore J→M: RE multi-position converts and re-sorts', () => {
+  assert.equal(jlcmcToMisumi('TXCK-H6-3030-L800-RE-Z6-A100-B200').result, 'HFS6-3030-800-Z6-XA500-XB700');
+});
+
+test('explainJlcmc reads RE counterbore positions from the right end', () => {
+  const rows = explainJlcmc('TXCK-H6-3030-L800-RE-Z6-A100');
+  const row = rows.find(r => r.token === 'A100');
+  assert.ok(row && /right end/.test(row.meaning));
+});
+
 test('explainMisumi describes LCP', () => {
   const rows = explainMisumi('HFS6-3030-500-LCP');
   const row = rows.find(r => r.token === 'LCP');

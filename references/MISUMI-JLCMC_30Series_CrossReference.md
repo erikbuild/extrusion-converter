@@ -169,12 +169,13 @@ row-count letter needs no extra tokens. JLCMC `L`-codes dimension from the left 
 
 ### Counterbores at specified position
 
+MISUMI (p2-687): two direction letters only — `X` = vertical (top-to-bottom), `Y` = horizontal (right-to-left) — with `A`–`E` as successive positions, absolute mm from the left end (range 7 to L−7), plus a separate `Z#` size token.
+JLCMC (catalog p. 8–9): `LC`/`RC` = horizontal, `LE`/`RE` = vertical; `L`-codes are dimensioned from the **left** end face, `R`-codes from the **right**; positions are incremental (`A` from the end, `B`/`C`… from the previous hole), min 7 mm from the end face, max 5 per direction.
+
 | Direction | MISUMI | JLCMC |
 |---|---|---|
-| Horizontal, left | `XA### Z#` | `LC-Z#-A###` |
-| Horizontal, right | `XB### Z#` | `RC-Z#-A###` |
-| Vertical, left | `XC### Z#` | `LE-Z#-A###` |
-| Vertical, right | `XD### Z#` | `RE-Z#-A###` |
+| Vertical (top-down) | `Z# + XA###…XE###` | `LE-Z#-A###…` (or `RE`, right-referenced) |
+| Horizontal | `Z# + YA###…YE###` | `LC-Z#-A###…` (or `RC`, right-referenced) |
 | Bore size codes | `Z6` (Ø6.5/Ø11), `Z8` (Ø9/Ø14) | `Z5` (Ø5.5/Ø9.5), `Z6` (Ø6.5/Ø11), `Z8` (Ø9/Ø14), `Z12` (Ø13/Ø20 for 10.2 slot) |
 
 JLCMC's `Z5` (M5 cap) is **finer than MISUMI's smallest 6-series counterbore**. MISUMI's two sizes are a subset of JLCMC's four.

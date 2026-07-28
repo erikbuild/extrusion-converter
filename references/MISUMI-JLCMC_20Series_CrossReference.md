@@ -177,8 +177,8 @@ Mapping details otherwise match the 30-series document §5.
 
 ### Counterbores at specified position
 
-JLCMC: `LC` / `RC` / `LE` / `RE` + size `Z#` + incremental positions `A###` / `B###` / `C###` / …
-MISUMI: face letter `X` / `Y` / `Z` / `W` + position letter `A`–`E` + absolute mm, plus separate `Z#` size token.
+JLCMC: `LC` / `RC` (horizontal) and `LE` / `RE` (vertical) + size `Z#` + incremental positions `A###` / `B###` / `C###` / … — `L`-codes dimension from the left end face, `R`-codes from the right.
+MISUMI: direction letter `X` (vertical, top-to-bottom) or `Y` (horizontal, right-to-left) + position letter `A`–`E` + absolute mm from the left end, plus separate `Z#` size token.
 
 Counterbore Z sizes that apply to 6 mm slot (5/20-series scale):
 
