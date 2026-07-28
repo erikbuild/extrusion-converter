@@ -145,12 +145,12 @@ The alteration code system is shared across all JLCMC profile series (20, 30, 40
 
 ### Wrench (through) hole at specified position
 
-MISUMI: `AH###` / `BH###` / `CH###` / `DH###` / `EH###` (5 horizontal positions) and `AV###` / `BV###` … (5 vertical). **Positions are absolute mm from the left end.**
+MISUMI: `AH###` / `BH###` / `CH###` / `DH###` / `EH###` (5 horizontal positions), `AV###` / `BV###` … (5 vertical), and `AP###` / `BP###` … (5 criss-cross = horizontal + vertical at the same location). **Positions are absolute mm from the left end.**
 
 JLCMC: `LK` / `RK` / `LM` / `RM` followed by `A###`, `B###`, `C###`, … **Positions are incremental** — `A` is mm from the reference end face (`L`-codes reference the **left** end, `R`-codes the **right**), `B` is mm from `A`, `C` is mm from `B`, and so on.
 
 Wrench hole size (parameter `d`) for 20-series:
-- JLCMC 20-series d = 5 mm (general) / 6.5 mm (EN/International variants).
+- JLCMC 20-series d = 6.5 mm (EN — the Euro Standard TXCJ tier; the 5 mm entry in JLCMC's table belongs to the 15-series).
 - MISUMI 5-series wrench-hole sizes: D5 (Ø 5), D6 (Ø 6.5), D8 (Ø 8) configurable.
 
 Converting positions: MISUMI absolute → JLCMC cumulative, and vice versa.

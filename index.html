@@ -320,8 +320,9 @@
       <tr><td>45° cut — face back</td><td><code>LBT45 / RBT45</code></td><td><code>LB / RB</code></td></tr>
       <tr><td>High-precision cut (±0.2)</td><td><code>SC</code></td><td>standard for L≤1000</td></tr>
       <tr><td>C-chamfer both ends</td><td><code>CW</code></td><td>— (specify by note)</td></tr>
-      <tr><td>Wrench-hole — horizontal L/R</td><td><code>AH### / BH###</code></td><td><code>LK-A### / RK-A###</code></td></tr>
-      <tr><td>Wrench-hole — vertical L/R</td><td><code>AV### / BV###</code></td><td><code>LM-A### / RM-A###</code></td></tr>
+      <tr><td>Wrench-hole at position — horizontal (A–E = up to 5 locations, mm from left end)</td><td><code>AH###…EH###</code></td><td><code>LK-A###-B###…</code></td></tr>
+      <tr><td>Wrench-hole at position — vertical</td><td><code>AV###…EV###</code></td><td><code>LM-A###-B###…</code></td></tr>
+      <tr><td>Wrench-hole at position — criss-cross</td><td><code>AP###…EP###</code></td><td><code>LK-A###… + LM-A###…</code></td></tr>
       <tr><td>Blind-joint wrench holes at end — 1/2/3 rows, H/V/criss-cross</td><td><code>LCH…LEP / RCH…REP</code> (+<code>FL/FR</code>, <code>X5/X8</code>)</td><td><code>LK/LM-A15</code> left, <code>RK/RM-A15</code> right (A10 on 20-series)</td></tr>
       <tr><td>Counterbore — vertical (top-down)</td><td><code>Z# + XA###…XE###</code></td><td><code>LE-Z#-A###…</code></td></tr>
       <tr><td>Counterbore — horizontal</td><td><code>Z# + YA###…YE###</code></td><td><code>LC-Z#-A###…</code></td></tr>
@@ -581,6 +582,11 @@ const MISUMI_ALT_HANDLERS = [
   // Default the JLCMC translation to left-side (LK horizontal / LM vertical); user must confirm.
   { re: /^([A-E])H(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'H', side: 'L', letter: m[1], pos: m[2] } }) },
   { re: /^([A-E])V(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'V', side: 'L', letter: m[1], pos: m[2] } }) },
+  // Criss-cross positioned wrench hole: horizontal + vertical at the same location (p2-685).
+  { re: /^([A-E])P(\d+)$/, toJ: m => ({ code: null, defer: [
+      { kind: 'W', dir: 'H', side: 'L', letter: m[1], pos: m[2] },
+      { kind: 'W', dir: 'V', side: 'L', letter: m[1], pos: m[2] },
+    ] }) },
   // Blind-joint wrench holes at fixed H from the end: L/R end, C/W/E = 1/2/3 rows,
   // H/V/P = horizontal / vertical / criss-cross. JLCMC drills every slot row on the
   // machined face at a given position by default, so the row-count letter needs no
@@ -1176,6 +1182,10 @@ function explainMisumi(partStr) {
     }
     if (m = tok.match(/^([A-E])V(\d+(\.\d+)?)$/)) {
       rows.push({ token: tok, meaning: 'wrench-hole, vertical through, position ' + m[1] + ' at ' + m[2] + ' mm from left end (absolute)' });
+      continue;
+    }
+    if (m = tok.match(/^([A-E])P(\d+(\.\d+)?)$/)) {
+      rows.push({ token: tok, meaning: 'wrench-holes, criss-cross (horizontal + vertical), position ' + m[1] + ' at ' + m[2] + ' mm from left end (absolute)' });
       continue;
     }
     if (m = tok.match(/^([LR])(DH|DV|SH|SV|MH|MV)$/)) {

@@ -137,15 +137,14 @@ MISUMI uses face-orientation suffix; JLCMC uses compass-direction letters. Same 
 
 ### Wrench (through) hole at specified position
 
-MISUMI: `AH###` / `BH###` / `AV###` / `BV###` — "A/B" = first/second row (horizontal/vertical letter), number = mm from left end.
+MISUMI (p2-685): letter `A`–`E` = up to five successive locations per direction, then `H` = horizontal, `V` = vertical, or `P` = criss-cross (horizontal + vertical at the same location), then the position as absolute mm **from the left end** (0.5 mm increments). The part number does not encode a side.
 JLCMC: `LK` / `RK` / `LM` / `RM` followed by **`A###`** (`B###`, `C###`…). `L`-codes are dimensioned from the **left** end face, `R`-codes from the **right** end face (JLCMC 30-series catalog p. 9 legend); `A` is mm from that end, `B`/`C`… are increments from the previous hole. Default first-hole offset 30 mm; any position 0–6000 mm allowed; max 5 in one direction.
 
 | Direction | MISUMI | JLCMC |
 |---|---|---|
-| Horizontal, left side | `AH###` | `LK-A###` |
-| Horizontal, right side | `BH###` | `RK-A###` |
-| Vertical, left side | `AV###` | `LM-A###` |
-| Vertical, right side | `BV###` | `RM-A###` |
+| Horizontal | `AH###`…`EH###` | `LK-A###-B###…` (or `RK`, right-referenced) |
+| Vertical | `AV###`…`EV###` | `LM-A###-B###…` (or `RM`) |
+| Criss-cross | `AP###`…`EP###` | `LK` + `LM` groups at the same positions |
 
 ### Blind-joint wrench holes at fixed end position
 

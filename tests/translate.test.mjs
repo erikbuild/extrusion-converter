@@ -112,6 +112,24 @@ test('J→M: left-end arbitrary positions unchanged', () => {
   assert.equal(jlcmcToMisumi('TXCK-H6-3030-L800-LM-A50-B300').result, 'HFS6-3030-800-AV50-BV350');
 });
 
+test('AP (criss-cross positioned wrench hole) → LK and LM at same position', () => {
+  assert.equal(misumiToJlcmc('HFS6-3030-500-AP100').result, 'TXCK-H6-3030-L500-LK-A100-LM-A100');
+});
+
+test('AP+BP chain converts to incremental in both directions', () => {
+  assert.equal(misumiToJlcmc('HFS6-3030-500-AP100-BP200').result, 'TXCK-H6-3030-L500-LK-A100-B100-LM-A100-B100');
+});
+
+test('AP merges and dedupes with AH at the same position', () => {
+  assert.equal(misumiToJlcmc('HFS6-3030-500-AH100-AP100').result, 'TXCK-H6-3030-L500-LK-A100-LM-A100');
+});
+
+test('explainMisumi describes AP', () => {
+  const rows = explainMisumi('HFS6-3030-500-AP100');
+  const row = rows.find(r => r.token === 'AP100');
+  assert.ok(row && /criss-cross/.test(row.meaning) && /100 mm/.test(row.meaning));
+});
+
 test("counterbore M→J: MISUMI's catalog example — X (vertical) → LE, left-referenced", () => {
   assert.equal(misumiToJlcmc('HFS6-3030-500-Z6-XA200-XB256').result, 'TXCK-H6-3030-L500-LE-Z6-A200-B56');
 });
