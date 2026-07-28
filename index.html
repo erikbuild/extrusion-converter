@@ -322,6 +322,7 @@
       <tr><td>C-chamfer both ends</td><td><code>CW</code></td><td>— (specify by note)</td></tr>
       <tr><td>Wrench-hole — horizontal L/R</td><td><code>AH### / BH###</code></td><td><code>LK-A### / RK-A###</code></td></tr>
       <tr><td>Wrench-hole — vertical L/R</td><td><code>AV### / BV###</code></td><td><code>LM-A### / RM-A###</code></td></tr>
+      <tr><td>Blind-joint wrench holes at end — 1/2/3 rows, H/V/criss-cross</td><td><code>LCH…LEP / RCH…REP</code> (+<code>FL/FR</code>, <code>X5/X8</code>)</td><td><code>LK/LM-A15</code> left, <code>RK/RM-A15</code> right (A10 on 20-series)</td></tr>
       <tr><td>Counterbore — horizontal L/R</td><td><code>XA###/XB### + Z#</code></td><td><code>LC/RC-Z#-A###</code></td></tr>
       <tr><td>Counterbore — vertical L/R</td><td><code>XC###/XD### + Z#</code></td><td><code>LE/RE-Z#-A###</code></td></tr>
       <tr><td>Joint-specific holes (intent-only map)</td><td><code>LDH/LSH/LMH</code> (etc.)</td><td><code>LH/LDH</code> (or <code>LG/LDG</code> vertical)</td></tr>
@@ -521,6 +522,26 @@ function tapNote(series, section, both) {
   return 'End-tap depth: MISUMI ' + mi + ' → JLCMC ' + jc + (both ? ' (both ends).' : '.') + ' Verify Blind-Joint bolt length.';
 }
 
+// Blind-joint wrench holes sit at a fixed distance from the end face:
+// 5-series 10 mm (25-square sections 12.5 mm), 6-series 15 mm (incl. 50-square).
+function wrenchEndOffset(series, section) {
+  if (series === '5') return (section === '2525' || section === '2550') ? 12.5 : 10;
+  return 15;
+}
+
+// MISUMI row letter for blind-joint wrench holes: C/W/E = 1/2/3 slot rows on the
+// drilled face. Rows = (face dimension − 2·H) / slot pitch + 1; capped at E.
+function wrenchRowLetter(series, section, dir) {
+  const H = wrenchEndOffset(series, section);
+  const w = parseFloat(section.slice(0, 2));
+  const h = section.length > 2 ? parseFloat(section.slice(2)) : w;
+  const pitch = series === '5' ? ((section === '2525' || section === '2550') ? 25 : 20)
+                               : (section === '5050' ? 20 : 30);
+  const dim = dir === 'H' ? h : w;
+  const rows = Math.max(1, Math.round((dim - 2 * H) / pitch) + 1);
+  return rows >= 3 ? 'E' : rows === 2 ? 'W' : 'C';
+}
+
 // MISUMI alteration parsers: { match: regex, toJ: fn(matchgroups, ctx), notes: string }
 // ctx = { series, section } supplied by translator dispatcher.
 // Each handler returns { code, note }
@@ -558,12 +579,20 @@ const MISUMI_ALT_HANDLERS = [
   // Wrench holes — positions A-E on horizontal (H) or vertical (V) face.
   // MISUMI A/B/C/D/E are successive positions, not L/R. Face is implied by orientation.
   // Default the JLCMC translation to left-side (LK horizontal / LM vertical); user must confirm.
-  { re: /^([A-E])H(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'H', letter: m[1], pos: m[2] } }) },
-  { re: /^([A-E])V(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'V', letter: m[1], pos: m[2] } }) },
-  { re: /^LWP$/, toJ: () => ({ code: null,
-      note: 'LWP (wrench-hole aligned with mating tap) — translate by explicit position: use LK-A### with the actual offset.', err: true }) },
-  { re: /^RWP$/, toJ: () => ({ code: null,
-      note: 'RWP — same as LWP. Use RK-A### with explicit position.', err: true }) },
+  { re: /^([A-E])H(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'H', side: 'L', letter: m[1], pos: m[2] } }) },
+  { re: /^([A-E])V(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'W', dir: 'V', side: 'L', letter: m[1], pos: m[2] } }) },
+  // Blind-joint wrench holes at fixed H from the end: L/R end, C/W/E = 1/2/3 rows,
+  // H/V/P = horizontal / vertical / criss-cross. JLCMC drills every slot row on the
+  // machined face at a given position by default, so the row-count letter needs no
+  // extra JLCMC tokens.
+  { re: /^([LR])([CWE])([HVP])$/, toJ: (m, c) => {
+      const H = wrenchEndOffset(c.series, c.section);
+      const dirs = m[3] === 'P' ? ['H', 'V'] : [m[3]];
+      return {
+        defer: dirs.map(d => ({ kind: 'W', dir: d, side: m[1], pos: H, fixed: true })),
+        note: m[0] + ' (blind-joint wrench holes, ' + (m[1] === 'L' ? 'left' : 'right') + ' end) → JLCMC wrench hole(s) at ' + H + ' mm from the ' + (m[1] === 'L' ? 'left' : 'right') + ' end face. JLCMC drills all slot rows on the face at that position by default (matches the ' + m[2] + ' row count). ' + (c.series === '5' ? 'Hole Ø: MISUMI 7.35 mm vs JLCMC 20-series 6.5 mm' : 'Hole Ø: MISUMI 5 (X5) or 8 (X8) mm vs JLCMC 30-series 8.5 mm') + ' — verify wrench clearance.',
+      };
+    } },
   // Counterbores — size + position (we collect Z# and X[A-E]### tokens and pair them)
   // Handled in a special pass below
   { re: /^Z(\d+)$/, toJ: m => ({ code: null, defer: { kind: 'Z', size: m[1] } }) },
@@ -585,9 +614,12 @@ const MISUMI_ALT_HANDLERS = [
       note: m[0] + ' (M-hole, vertical) → JLCMC LG/RG or LDG/RDG.' }) },
   { re: /^JLP$/, toJ: () => ({ code: null,
       note: 'JLP (Parallel-Joint L-hole) has no JLCMC equivalent — drill separately or quote.', err: true }) },
-  // End-cap clearance shift
-  { re: /^FL$|^FR$/, toJ: m => ({ code: null,
-      note: m[0] + ' (end-cap clearance shift on wrench hole) has no JLCMC code — specify by note.', err: true }) },
+  // End-cap clearance: shifts the blind-joint wrench holes on that end 3 mm toward
+  // the end face. Valid only alongside an LCH…REP-family code (per MISUMI p2-683).
+  { re: /^F([LR])$/, toJ: m => ({ code: null, defer: { kind: 'FLR', side: m[1] } }) },
+  // 6-series wrench-hole diameter selector (Ø5 / Ø8). JLCMC 30-series is Ø8.5, fixed.
+  { re: /^X([58])$/, toJ: (m, c) => ({ code: null,
+      note: 'X' + m[1] + ' selects MISUMI wrench-hole Ø' + m[1] + ' mm — JLCMC ' + (c.series === '5' ? '20-series drills Ø6.5' : '30-series drills Ø8.5') + ' mm (not selectable). Verify wrench clearance.' }) },
 ];
 
 function tapNoteJtoM(series, section, both) {
@@ -718,7 +750,12 @@ function translateAltsMtoJ(alts, ctx) {
       const m = tok.match(h.re);
       if (m) {
         const r = h.toJ(m, ctx);
-        if (r.defer) { deferred.push(r.defer); handled = true; break; }
+        if (r.defer) {
+          deferred.push(...[].concat(r.defer));
+          if (r.note) notes.push({ text: r.note, err: !!r.err });
+          handled = true;
+          break;
+        }
         if (r.code) out.push(r.code);
         if (r.note) notes.push({ text: r.note, err: !!r.err });
         handled = true;
@@ -728,27 +765,39 @@ function translateAltsMtoJ(alts, ctx) {
     if (!handled) notes.push({ text: 'Unrecognised MISUMI alteration "' + tok + '" — no translation.', err: true });
   }
 
-  // Emit deferred wrench-hole groups (H direction → LK, V direction → LM by default).
-  // MISUMI positions are ABSOLUTE from the left end; JLCMC positions are INCREMENTAL
-  // (A from left end, B from A, C from B, …). Convert by differencing.
+  // Emit wrench-hole groups. L-side positions are absolute from the left end,
+  // R-side from the right end (JLCMC dimensions R-codes from the right end face).
+  // MISUMI positions are ABSOLUTE; JLCMC positions are INCREMENTAL
+  // (A from the end face, B from A, C from B, …). Convert by differencing.
   const wHoles = deferred.filter(d => d.kind === 'W');
+  // End-cap shift applies to that end's fixed blind-joint holes; alone it is invalid.
+  const capShift = { L: 0, R: 0 };
+  for (const f of deferred.filter(d => d.kind === 'FLR')) {
+    if (wHoles.some(h => h.fixed && h.side === f.side)) {
+      capShift[f.side] = 3;
+      notes.push({ text: 'F' + f.side + ': ' + (f.side === 'L' ? 'left' : 'right') + '-end blind-joint wrench holes shifted 3 mm toward the end face for end-cap clearance.', err: false });
+    } else {
+      notes.push({ text: 'F' + f.side + ' modifies the blind-joint wrench-hole codes (LCH…REP family) only — no matching ' + f.side + '-end code present, token dropped.', err: true });
+    }
+  }
+  for (const h of wHoles) { if (h.fixed) h.pos = parseFloat(h.pos) - capShift[h.side]; }
   const emitWrenchGroup = (face, holes) => {
     if (!holes.length) return;
-    // sort by absolute position (the letter A-E is the row index, position is the mm value)
-    holes.sort((a, b) => parseFloat(a.pos) - parseFloat(b.pos));
+    const positions = [...new Set(holes.map(h => parseFloat(h.pos)))].sort((a, b) => a - b);
     out.push(face);
     let prev = 0;
     const letters = ['A','B','C','D','E'];
-    for (let k = 0; k < holes.length; k++) {
-      const abs = parseFloat(holes[k].pos);
+    positions.forEach((abs, k) => {
       const incr = abs - prev;
       out.push(letters[k] + (incr % 1 === 0 ? incr : incr.toFixed(1)));
       prev = abs;
-    }
+    });
   };
-  emitWrenchGroup('LK', wHoles.filter(d => d.dir === 'H'));
-  emitWrenchGroup('LM', wHoles.filter(d => d.dir === 'V'));
-  if (wHoles.length) {
+  emitWrenchGroup('LK', wHoles.filter(d => d.dir === 'H' && d.side === 'L'));
+  emitWrenchGroup('LM', wHoles.filter(d => d.dir === 'V' && d.side === 'L'));
+  emitWrenchGroup('RK', wHoles.filter(d => d.dir === 'H' && d.side === 'R'));
+  emitWrenchGroup('RM', wHoles.filter(d => d.dir === 'V' && d.side === 'R'));
+  if (wHoles.some(d => !d.fixed)) {
     notes.push({ text: 'Wrench-hole positions converted from MISUMI absolute (mm from left end) to JLCMC incremental (A from left, B from A, …). Face defaulted to L-side (LK / LM) — change to R-side if needed.', err: false });
   }
 
@@ -816,29 +865,44 @@ function translateAltsMtoJ(alts, ctx) {
 function translateAltsJtoM(alts, ctx) {
   const notes = [];
   const out = [];
+  const fixedWrench = {}; // key: side + rowLetter + (shifted ? 's' : '') → { H, V }
   let i = 0;
 
   while (i < alts.length) {
     const tok = alts[i];
 
-    // Wrench hole: LK/RK/LM/RM followed by successive A###, B###, … (JLCMC incremental positions)
-    // MISUMI doesn't encode the face (L/R) in the code itself, only the direction (H/V).
+    // Wrench hole: LK/RK/LM/RM followed by successive A###, B###, … increments.
+    // L-codes are dimensioned from the left end face, R-codes from the right.
     if (/^(LK|RK|LM|RM)$/.test(tok)) {
       const dir = (tok[1] === 'K') ? 'H' : 'V';
-      const face = tok;
+      const fromRight = tok[0] === 'R';
       let j = i + 1;
       const incr = [];
       while (j < alts.length && /^[A-E]\d+(\.\d+)?$/.test(alts[j])) {
-        incr.push({ letter: alts[j][0], val: parseFloat(alts[j].slice(1)) });
+        incr.push(parseFloat(alts[j].slice(1)));
         j++;
       }
       if (!incr.length) {
         notes.push({ text: tok + ' wrench-hole code present but no position (A###) follows.', err: true });
+        i = j;
+        continue;
+      }
+      const H = wrenchEndOffset(ctx.series, ctx.section);
+      if (incr.length === 1 && (incr[0] === H || incr[0] === H - 3)) {
+        // Fixed blind-joint position → MISUMI family code (LCH…REP), FL/FR if shifted.
+        const letter = wrenchRowLetter(ctx.series, ctx.section, dir);
+        const key = (fromRight ? 'R' : 'L') + letter + (incr[0] === H - 3 ? 's' : '');
+        if (!fixedWrench[key]) fixedWrench[key] = {};
+        fixedWrench[key][dir] = true;
+        notes.push({ text: tok + '-A' + incr[0] + ' sits at the MISUMI blind-joint wrench-hole position (' + H + ' mm' + (incr[0] === H - 3 ? ' − 3 mm end-cap shift' : '') + ') — emitting the fixed alteration code. Row letter ' + letter + ' assumes ' + ctx.section + ' slot rows; JLCMC drills all rows by default.', err: false });
       } else {
-        // Convert JLCMC incremental → MISUMI absolute (cumulative sum).
+        // Convert JLCMC incremental → MISUMI absolute (cumulative sum, left-referenced).
+        const letters = ['A','B','C','D','E'];
         let acc = 0;
-        for (const h of incr) { acc += h.val; out.push(h.letter + dir + (acc % 1 === 0 ? acc : acc.toFixed(1))); }
-        notes.push({ text: 'Wrench-hole positions converted from JLCMC incremental (A from left, B from A, …) to MISUMI absolute (mm from left end). Face ' + face + ' not encoded in MISUMI — orientation only.', err: false });
+        let abs = incr.map(v => (acc += v));
+        if (fromRight) abs = abs.map(p => ctx.length - p).reverse();
+        abs.forEach((p, k) => out.push(letters[k] + dir + (p % 1 === 0 ? p : p.toFixed(1))));
+        notes.push({ text: 'Wrench-hole positions converted from JLCMC ' + (fromRight ? 'right-end-referenced' : 'left-end') + ' incremental to MISUMI absolute (mm from left end). Face ' + tok + ' not encoded in MISUMI — orientation only.', err: false });
       }
       i = j;
       continue;
@@ -898,6 +962,14 @@ function translateAltsJtoM(alts, ctx) {
     }
     if (!handled) notes.push({ text: 'Unrecognised JLCMC alteration "' + tok + '" — no translation.', err: true });
     i++;
+  }
+
+  // Emit fixed blind-joint wrench-hole codes; an H+V pair on one end merges to P (criss-cross).
+  for (const key of Object.keys(fixedWrench)) {
+    const rec = fixedWrench[key];
+    const third = rec.H && rec.V ? 'P' : (rec.H ? 'H' : 'V');
+    out.push(key[0] + key[1] + third);
+    if (key.length > 2) out.push(key[0] === 'L' ? 'FL' : 'FR');
   }
 
   return { out, notes };
@@ -990,7 +1062,7 @@ function jlcmcToMisumi(input) {
   const len = parsed.length;
 
   // Alterations
-  const altRes = translateAltsJtoM(parsed.alts, { series: parsed.series, section });
+  const altRes = translateAltsJtoM(parsed.alts, { series: parsed.series, section, length: parsed.length });
   notes.push(...altRes.notes);
 
   let parts = [prefix + parsed.series, section, String(len)];
@@ -1072,8 +1144,6 @@ function explainMisumi(partStr) {
     RBT45: 'right end 45° cut, face back',
     SC: 'high-precision cut (±0.2 mm; only L ≤ 1500)',
     CW: 'C-chamfer both end faces',
-    LWP: 'wrench access hole, left, aligned to mating part',
-    RWP: 'wrench access hole, right, aligned to mating part',
     FL: 'wrench-hole offset for left end cap (3 mm)',
     FR: 'wrench-hole offset for right end cap (3 mm)',
     JLP: 'Parallel-Joint L-hole',
@@ -1115,6 +1185,17 @@ function explainMisumi(partStr) {
                      SH: 'S-hole (Pre-Assy Double Joint), horizontal', SV: 'S-hole, vertical',
                      MH: 'M-hole (Post-Assy / Center Joint), horizontal', MV: 'M-hole, vertical' }[m[2]];
       rows.push({ token: tok, meaning: side + ' end ' + kind });
+      continue;
+    }
+    if (m = tok.match(/^([LR])([CWE])([HVP])$/)) {
+      const side = m[1] === 'L' ? 'left' : 'right';
+      const rowsTxt = { C: '1 row', W: '2 rows', E: '3 rows' }[m[2]];
+      const dirTxt = { H: 'horizontal', V: 'vertical', P: 'criss-cross (horizontal + vertical)' }[m[3]];
+      rows.push({ token: tok, meaning: 'blind-joint wrench holes, ' + side + ' end, ' + rowsTxt + ', ' + dirTxt + ' — fixed at ' + wrenchEndOffset(parsed.series, parsed.section) + ' mm from the end face' });
+      continue;
+    }
+    if (m = tok.match(/^X([58])$/)) {
+      rows.push({ token: tok, meaning: 'wrench-hole diameter selector — Ø' + m[1] + ' mm (6-series)' });
       continue;
     }
     if (m = tok.match(/^ZZZ(\d+)$/)) {
@@ -1208,6 +1289,7 @@ function explainJlcmc(partStr) {
       i++; continue;
     }
     if (/^(LK|RK|LM|RM)$/.test(tok)) {
+      const end = tok[0] === 'R' ? 'right' : 'left';
       rows.push({ token: tok, meaning: 'wrench-hole — ' + FACE_NAME[tok] + ' face' });
       i++;
       let cumulative = 0;
@@ -1216,8 +1298,8 @@ function explainJlcmc(partStr) {
         const v = parseFloat(t.slice(1));
         cumulative += v;
         const detail = (t[0] === 'A')
-          ? '  ↳ position A at ' + v + ' mm from left end'
-          : '  ↳ position ' + t[0] + ' — +' + v + ' mm from previous hole (cumulative: ' + cumulative + ' mm from left end)';
+          ? '  ↳ position A at ' + v + ' mm from ' + end + ' end'
+          : '  ↳ position ' + t[0] + ' — +' + v + ' mm from previous hole (cumulative: ' + cumulative + ' mm from ' + end + ' end)';
         rows.push({ token: t, meaning: detail });
         i++;
       }
