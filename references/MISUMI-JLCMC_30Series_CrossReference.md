@@ -138,7 +138,7 @@ MISUMI uses face-orientation suffix; JLCMC uses compass-direction letters. Same 
 ### Wrench (through) hole at specified position
 
 MISUMI: `AH###` / `BH###` / `AV###` / `BV###` — "A/B" = first/second row (horizontal/vertical letter), number = mm from left end.
-JLCMC: `LK` / `RK` / `LM` / `RM` followed by **`A###`** (`B###`, `C###`…) to give position from left end. Default first-hole offset 30 mm; subsequent positions in alphabetical order, max 5 in one direction.
+JLCMC: `LK` / `RK` / `LM` / `RM` followed by **`A###`** (`B###`, `C###`…). `L`-codes are dimensioned from the **left** end face, `R`-codes from the **right** end face (JLCMC 30-series catalog p. 9 legend); `A` is mm from that end, `B`/`C`… are increments from the previous hole. Default first-hole offset 30 mm; any position 0–6000 mm allowed; max 5 in one direction.
 
 | Direction | MISUMI | JLCMC |
 |---|---|---|
@@ -146,8 +146,26 @@ JLCMC: `LK` / `RK` / `LM` / `RM` followed by **`A###`** (`B###`, `C###`…) to g
 | Horizontal, right side | `BH###` | `RK-A###` |
 | Vertical, left side | `AV###` | `LM-A###` |
 | Vertical, right side | `BV###` | `RM-A###` |
-| Aligned with mating tap (fixed) | `LWP` / `RWP` | Use `LK` / `RK` with explicit `A###`. |
-| End-cap clearance shift | `FL` / `FR` | — (specify by note) |
+
+### Blind-joint wrench holes at fixed end position
+
+MISUMI grammar (p2-683): `[L|R]` end + `[C|W|E]` rows (1/2/3) + `[H|V|P]` horizontal/vertical/criss-cross.
+These are wrench access through-holes for blind joints at a fixed offset from the end face
+(HFS6: 15 mm; hole Ø5/Ø8 selected by `X5`/`X8`). `FL`/`FR` shift them 3 mm toward the end
+for end-cap clearance. JLCMC has no fixed-position codes — use positioned wrench holes;
+JLCMC drills all slot rows on the machined face at a given position by default, so the
+row-count letter needs no extra tokens. JLCMC `L`-codes dimension from the left end face,
+`R`-codes from the right (30-series hole Ø8.5, not selectable).
+
+| MISUMI | JLCMC |
+|---|---|
+| `LCH` / `LWH` / `LEH` | `LK-A15` |
+| `LCV` / `LWV` / `LEV` | `LM-A15` |
+| `LCP` / `LWP` / `LEP` | `LK-A15-LM-A15` |
+| `RCH` / `RWH` / `REH` | `RK-A15` |
+| `RCV` / `RWV` / `REV` | `RM-A15` |
+| `RCP` / `RWP` / `REP` | `RK-A15-RM-A15` |
+| any of the above + `FL`/`FR` | shift that end's position to `A12` |
 
 ### Counterbores at specified position
 

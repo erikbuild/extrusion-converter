@@ -147,13 +147,33 @@ The alteration code system is shared across all JLCMC profile series (20, 30, 40
 
 MISUMI: `AH###` / `BH###` / `CH###` / `DH###` / `EH###` (5 horizontal positions) and `AV###` / `BV###` … (5 vertical). **Positions are absolute mm from the left end.**
 
-JLCMC: `LK` / `RK` / `LM` / `RM` followed by `A###`, `B###`, `C###`, … **Positions are incremental** — `A` is mm from the left end, `B` is mm from `A`, `C` is mm from `B`, and so on.
+JLCMC: `LK` / `RK` / `LM` / `RM` followed by `A###`, `B###`, `C###`, … **Positions are incremental** — `A` is mm from the reference end face (`L`-codes reference the **left** end, `R`-codes the **right**), `B` is mm from `A`, `C` is mm from `B`, and so on.
 
 Wrench hole size (parameter `d`) for 20-series:
 - JLCMC 20-series d = 5 mm (general) / 6.5 mm (EN/International variants).
 - MISUMI 5-series wrench-hole sizes: D5 (Ø 5), D6 (Ø 6.5), D8 (Ø 8) configurable.
 
 Converting positions: MISUMI absolute → JLCMC cumulative, and vice versa.
+
+### Blind-joint wrench holes at fixed end position
+
+MISUMI grammar (p2-683): `[L|R]` end + `[C|W|E]` rows (1/2/3) + `[H|V|P]` horizontal/vertical/criss-cross.
+Wrench access through-holes for blind joints at a fixed offset from the end face:
+HFS5 = 10 mm (`A10`), 25-square sections 2525/2550 = 12.5 mm (`A12.5`); hole Ø7.35, no size
+selector. `FL`/`FR` shift them 3 mm toward the end for end-cap clearance (`A7` / `A9.5`).
+JLCMC drills all slot rows on the machined face at a given position by default, so the
+row-count letter needs no extra tokens (20-series hole Ø6.5, not selectable).
+
+| MISUMI | JLCMC |
+|---|---|
+| `LCH` / `LWH` / `LEH` | `LK-A10` |
+| `LCV` / `LWV` / `LEV` | `LM-A10` |
+| `LCP` / `LWP` / `LEP` | `LK-A10-LM-A10` |
+| `RCH` / `RWH` / `REH` | `RK-A10` |
+| `RCV` / `RWV` / `REV` | `RM-A10` |
+| `RCP` / `RWP` / `REP` | `RK-A10-RM-A10` |
+
+Mapping details otherwise match the 30-series document §5.
 
 ### Counterbores at specified position
 
